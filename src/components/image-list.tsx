@@ -23,6 +23,8 @@ import {
   Search, 
   ChevronLeft, 
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Eye,
   Download,
   LayoutGrid,
@@ -44,6 +46,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
   const [viewMode, setViewMode] = useState<'table' | 'gallery'>('gallery'); // Galeria agora é o padrão
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showHealthyImages, setShowHealthyImages] = useState(true);
   const itemsPerPage = viewMode === 'table' ? 8 : 16; // Mais itens por página na galeria
 
   // Filtrar e pesquisar resultados
@@ -414,45 +417,51 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
           {/* Seção 2: Fotos Íntegras (Saudáveis) */}
           {paginatedResults.some(r => r.status === 'healthy') && (filter === 'all' || filter === 'healthy') && (
             <div className="space-y-3">
-              <h3 className="text-sm font-extrabold text-emerald-500 uppercase tracking-wider flex items-center gap-1.5 pl-1">
+              <h3 
+                className="text-sm font-extrabold text-emerald-500 uppercase tracking-wider flex items-center gap-1.5 pl-1 cursor-pointer select-none hover:text-emerald-400 transition-colors"
+                onClick={() => setShowHealthyImages(!showHealthyImages)}
+              >
                 <CheckCircle className="h-4 w-4" />
                 Imagens Íntegras ({healthyItems.length})
+                {showHealthyImages ? <ChevronUp className="h-4 w-4 ml-1 opacity-70" /> : <ChevronDown className="h-4 w-4 ml-1 opacity-70" />}
               </h3>
               
-              <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-                {paginatedResults.filter(r => r.status === 'healthy').map((item, idx) => {
-                  const thumbnailSrc = thumbnails[item.fileName];
-                  return (
-                    <div 
-                      key={`ok-${idx}`}
-                      className="group border rounded-xl overflow-hidden aspect-square bg-accent/30 relative cursor-pointer hover:border-emerald-500/50 hover:shadow-sm transition-all duration-200 hover:-translate-y-0.5"
-                      onClick={() => onSelectResult(item)}
-                    >
-                      {thumbnailSrc ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img 
-                          src={thumbnailSrc} 
-                          alt={item.fileName} 
-                          className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <FileImage className="h-6 w-6 text-muted-foreground/60" />
-                        </div>
-                      )}
+              {showHealthyImages && (
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+                  {paginatedResults.filter(r => r.status === 'healthy').map((item, idx) => {
+                    const thumbnailSrc = thumbnails[item.fileName];
+                    return (
+                      <div 
+                        key={`ok-${idx}`}
+                        className="group border rounded-xl overflow-hidden aspect-square bg-accent/30 relative cursor-pointer hover:border-emerald-500/50 hover:shadow-sm transition-all duration-200 hover:-translate-y-0.5"
+                        onClick={() => onSelectResult(item)}
+                      >
+                        {thumbnailSrc ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img 
+                            src={thumbnailSrc} 
+                            alt={item.fileName} 
+                            className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <FileImage className="h-6 w-6 text-muted-foreground/60" />
+                          </div>
+                        )}
 
-                      {/* Tooltip Overlay no hover */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2 text-white">
-                        <p className="text-[10px] font-bold truncate max-w-full">{item.fileName}</p>
-                        <p className="text-[8px] opacity-80 mt-0.5">
-                          {item.dimensions ? `${item.dimensions.width}x${item.dimensions.height}` : 'Imagem OK'}
-                        </p>
-                        <p className="text-[8px] opacity-80 font-mono mt-0.5">{item.durationMs}ms</p>
+                        {/* Tooltip Overlay no hover */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2 text-white">
+                          <p className="text-[10px] font-bold truncate max-w-full">{item.fileName}</p>
+                          <p className="text-[8px] opacity-80 mt-0.5">
+                            {item.dimensions ? `${item.dimensions.width}x${item.dimensions.height}` : 'Imagem OK'}
+                          </p>
+                          <p className="text-[8px] opacity-80 font-mono mt-0.5">{item.durationMs}ms</p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
