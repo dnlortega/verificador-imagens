@@ -513,25 +513,9 @@ export function Dashboard() {
         </Card>
       )}
 
-      {/* Painel de Histórico Colapsável */}
+      {/* Historico de Analises */}
       {showHistory && (
-        <Card className="border border-primary/20 bg-background/50 backdrop-blur-lg rounded-2xl animate-in fade-in-50 slide-in-from-top-4 duration-300">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex justify-between items-center border-b pb-2">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowHistoryList(!showHistoryList)}
-                  className="h-8 w-8 rounded-lg border-0 hover:bg-accent"
-                  title={showHistoryList ? "Ocultar Histórico" : "Exibir Histórico"}
-                >
-                  {showHistoryList ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </Button>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                  <History className="h-4 w-4" /> Histórico Recente de Verificações
-                </h3>
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl relative overflow-hidden rounded-[2rem]">
+        <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl relative overflow-hidden rounded-[2rem] animate-in fade-in-50 slide-in-from-top-4 duration-300">
           <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent opacity-50" />
           <CardContent className="p-8 space-y-6 relative z-10">
             <div className="flex items-center justify-between">

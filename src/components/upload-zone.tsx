@@ -88,7 +88,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
         id="file-upload"
         type="file"
         ref={fileInputRef}
-        className="hidden"
+        className="sr-only absolute pointer-events-none"
         multiple
         accept="image/*,video/mp4,video/quicktime,.bmp,.mp4,.mov"
         onChange={handleFileChange}
@@ -97,7 +97,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
         id="folder-upload"
         type="file"
         ref={folderInputRef}
-        className="hidden"
+        className="sr-only absolute pointer-events-none"
         {...({ webkitdirectory: "true", directory: "true" } as any)}
         multiple
         onChange={handleFileChange}

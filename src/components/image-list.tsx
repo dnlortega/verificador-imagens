@@ -241,12 +241,18 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                       <TableCell className="p-3">
                         <div className="h-10 w-10 rounded-lg border bg-accent/40 overflow-hidden flex items-center justify-center relative shrink-0">
                           {isHealthy && thumbnailSrc ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img 
-                              src={thumbnailSrc} 
-                              alt="Miniatura" 
-                              className="h-full w-full object-cover"
-                            />
+                            <div className="relative w-full h-full">
+                              <div className="absolute inset-0 bg-muted animate-pulse" />
+                              <img 
+                                src={thumbnailSrc} 
+                                alt="Miniatura" 
+                                className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500"
+                                onLoad={(e) => {
+                                  e.currentTarget.previousElementSibling?.classList.add('hidden');
+                                  e.currentTarget.classList.remove('opacity-0');
+                                }}
+                              />
+                            </div>
                           ) : (
                             <AlertCircle className="h-5 w-5 text-rose-500/80" />
                           )}
@@ -437,12 +443,18 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                         onClick={() => onSelectResult(item)}
                       >
                         {thumbnailSrc ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img 
-                            src={thumbnailSrc} 
-                            alt={item.fileName} 
-                            className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
+                          <div className="relative w-full h-full">
+                            <div className="absolute inset-0 bg-muted animate-pulse" />
+                            <img 
+                              src={thumbnailSrc} 
+                              alt={item.fileName} 
+                              className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 opacity-0 transition-all duration-700"
+                              onLoad={(e) => {
+                                e.currentTarget.previousElementSibling?.classList.add('hidden');
+                                e.currentTarget.classList.remove('opacity-0');
+                              }}
+                            />
+                          </div>
                         ) : (
                           <div className="flex h-full items-center justify-center">
                             <FileImage className="h-6 w-6 text-muted-foreground/60" />
