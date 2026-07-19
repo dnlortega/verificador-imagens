@@ -143,31 +143,47 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4 w-full" onClick={(e) => e.stopPropagation()}>
-            <Button 
-              asChild
-              variant="outline" 
-              size="lg" 
-              disabled={isProcessing}
-              className={`flex-1 min-w-[160px] h-14 rounded-2xl transition-all duration-500 border-white/10 bg-background/50 backdrop-blur-md hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-500 shadow-sm cursor-pointer group/btn ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
-            >
-              <label htmlFor="file-upload" className="flex items-center justify-center w-full font-bold tracking-wide">
+            {/* Botão de Arquivos */}
+            <div className="relative flex-1 min-w-[160px] h-14 group/btn">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className={`absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer ${isProcessing ? 'hidden' : ''}`}
+                multiple
+                accept="image/*,video/mp4,video/quicktime,.bmp,.mp4,.mov"
+                onChange={handleFileChange}
+              />
+              <Button 
+                variant="outline" 
+                size="lg" 
+                disabled={isProcessing}
+                className={`w-full h-full rounded-2xl transition-all duration-500 border-white/10 bg-background/50 backdrop-blur-md group-hover/btn:bg-emerald-500/10 group-hover/btn:border-emerald-500/30 group-hover/btn:text-emerald-500 shadow-sm ${isProcessing ? 'opacity-50' : ''}`}
+              >
                 <ImageIcon className="h-5 w-5 mr-3 transition-transform group-hover/btn:scale-110" />
                 Arquivos
-              </label>
-            </Button>
+              </Button>
+            </div>
             
-            <Button 
-              asChild
-              variant="outline" 
-              size="lg" 
-              disabled={isProcessing}
-              className={`flex-1 min-w-[160px] h-14 rounded-2xl transition-all duration-500 border-white/10 bg-background/50 backdrop-blur-md hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:text-indigo-400 shadow-sm cursor-pointer group/btn ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
-            >
-              <label htmlFor="folder-upload" className="flex items-center justify-center w-full font-bold tracking-wide">
+            {/* Botão de Pasta */}
+            <div className="relative flex-1 min-w-[160px] h-14 group/btn">
+              <input
+                type="file"
+                ref={folderInputRef}
+                className={`absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer ${isProcessing ? 'hidden' : ''}`}
+                {...({ webkitdirectory: "true", directory: "true" } as any)}
+                multiple
+                onChange={handleFileChange}
+              />
+              <Button 
+                variant="outline" 
+                size="lg" 
+                disabled={isProcessing}
+                className={`w-full h-full rounded-2xl transition-all duration-500 border-white/10 bg-background/50 backdrop-blur-md group-hover/btn:bg-indigo-500/10 group-hover/btn:border-indigo-500/30 group-hover/btn:text-indigo-400 shadow-sm ${isProcessing ? 'opacity-50' : ''}`}
+              >
                 <FolderOpen className="h-5 w-5 mr-3 transition-transform group-hover/btn:scale-110" />
                 Pasta Inteira
-              </label>
-            </Button>
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 pt-6 text-[11px] font-bold tracking-widest text-muted-foreground/50 uppercase">
