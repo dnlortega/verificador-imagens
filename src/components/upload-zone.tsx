@@ -83,7 +83,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full relative group perspective-1000">
       <input
         id="file-upload"
         type="file"
@@ -103,48 +103,55 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
         onChange={handleFileChange}
       />
 
+      {/* Orbital Glow Effect */}
+      <div className={`absolute -inset-1 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-1000 z-0 bg-gradient-to-r from-emerald-500 via-indigo-500 to-emerald-500 bg-[length:200%_auto] animate-[gradient_4s_linear_infinite] ${isDragActive ? 'opacity-100 scale-105' : ''}`} />
+
       <Card
-        className={`relative flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-3xl transition-all duration-500 min-h-[300px] text-center cursor-pointer select-none glass-card overflow-hidden group
+        className={`relative z-10 flex flex-col items-center justify-center p-12 md:p-16 border-[1.5px] border-dashed rounded-[2rem] transition-all duration-700 min-h-[350px] text-center cursor-pointer select-none overflow-hidden bg-background/60 backdrop-blur-3xl shadow-2xl
           ${isDragActive 
-            ? 'border-primary bg-primary/10 scale-[1.02] glow-effect' 
-            : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-white/5 dark:hover:bg-white/5'
+            ? 'border-emerald-500 bg-emerald-500/5 scale-[1.02] shadow-[0_0_80px_-15px_rgba(16,185,129,0.3)]' 
+            : 'border-white/10 hover:border-emerald-500/40 hover:bg-white/5 dark:hover:bg-white/5 shadow-black/20'
           }
-          ${isProcessing ? 'opacity-60 cursor-not-allowed grayscale-[0.5]' : ''}
+          ${isProcessing ? 'opacity-50 cursor-not-allowed grayscale-[0.8] blur-[2px]' : ''}
         `}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
         onDragLeave={handleDrag}
         onDrop={handleDrop}
-        onClick={isProcessing ? undefined : triggerFileInput}
       >
-        {/* Subtle background glow circle on hover */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-primary/0 via-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        {/* Subtle grid pattern background */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-50" />
 
-        <div className="flex flex-col items-center space-y-6 max-w-md relative z-10">
-          <div className={`p-5 rounded-2xl transition-all duration-500 ${isDragActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110 animate-bounce' : 'bg-primary/10 text-primary group-hover:bg-primary/20'}`}>
-            <Upload className="h-10 w-10" />
+        <div className="flex flex-col items-center space-y-8 max-w-lg relative z-20">
+          
+          {/* Animated Icon Ring */}
+          <div className="relative">
+            <div className={`absolute inset-0 rounded-full transition-transform duration-700 ${isDragActive ? 'scale-150 bg-emerald-500/20 animate-ping' : 'scale-100 bg-emerald-500/0'}`} />
+            <div className={`p-5 rounded-3xl transition-all duration-700 relative z-10 backdrop-blur-md border border-white/10 shadow-xl
+              ${isDragActive ? 'bg-emerald-500 text-white shadow-emerald-500/40 translate-y-[-10px]' : 'bg-background text-emerald-500 group-hover:shadow-emerald-500/20'}`}>
+              <Upload className={`w-10 h-10 transition-transform duration-700 ${isDragActive ? 'animate-bounce' : 'group-hover:-translate-y-1'}`} />
+            </div>
           </div>
           
-          <div className="space-y-3">
-            <h3 className="text-2xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
-              Arraste e solte seus arquivos aqui
+          <div className="space-y-4">
+            <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground via-foreground to-muted-foreground transition-all duration-300">
+              {isDragActive ? 'Solte para Iniciar Análise' : 'Arraste Arquivos ou Pastas'}
             </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed px-4">
-              Arraste fotos e vídeos individuais ou uma <strong className="text-foreground font-medium">pasta inteira</strong> para verificação instantânea na nuvem.
+            <p className="text-sm md:text-base text-muted-foreground/80 leading-relaxed font-medium px-4 max-w-sm mx-auto">
+              Processamento paralelo via WebWorkers para detecção instantânea na sua própria máquina.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4 w-full" onClick={(e) => e.stopPropagation()}>
             <Button 
               asChild
               variant="outline" 
               size="lg" 
               disabled={isProcessing}
-              className={`rounded-xl hover:scale-105 duration-300 border-primary/20 hover:bg-primary/10 shadow-sm cursor-pointer ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
-              title="Selecionar Imagens"
+              className={`flex-1 min-w-[160px] h-14 rounded-2xl transition-all duration-500 border-white/10 bg-background/50 backdrop-blur-md hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-500 shadow-sm cursor-pointer group/btn ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
             >
-              <label htmlFor="file-upload" className="flex items-center">
-                <ImageIcon className="h-5 w-5 mr-2" />
+              <label htmlFor="file-upload" className="flex items-center justify-center w-full font-bold tracking-wide">
+                <ImageIcon className="h-5 w-5 mr-3 transition-transform group-hover/btn:scale-110" />
                 Arquivos
               </label>
             </Button>
@@ -154,18 +161,19 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
               variant="outline" 
               size="lg" 
               disabled={isProcessing}
-              className={`rounded-xl hover:scale-105 duration-300 border-primary/20 hover:bg-primary/10 shadow-sm cursor-pointer ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
-              title="Selecionar Pasta"
+              className={`flex-1 min-w-[160px] h-14 rounded-2xl transition-all duration-500 border-white/10 bg-background/50 backdrop-blur-md hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:text-indigo-400 shadow-sm cursor-pointer group/btn ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
             >
-              <label htmlFor="folder-upload" className="flex items-center">
-                <FolderOpen className="h-5 w-5 mr-2" />
-                Pasta
+              <label htmlFor="folder-upload" className="flex items-center justify-center w-full font-bold tracking-wide">
+                <FolderOpen className="h-5 w-5 mr-3 transition-transform group-hover/btn:scale-110" />
+                Pasta Inteira
               </label>
             </Button>
           </div>
 
-          <div className="text-xs text-muted-foreground/60 pt-6 font-medium">
-            Formatos: JPEG, PNG, MP4, MOV, GIF, BMP, SVG (Max: 4GB/arquivo)
+          <div className="flex items-center gap-3 pt-6 text-[11px] font-bold tracking-widest text-muted-foreground/50 uppercase">
+            <span className="w-12 h-px bg-white/10" />
+            Formatos: JPG, PNG, MP4, MOV (Até 4GB)
+            <span className="w-12 h-px bg-white/10" />
           </div>
         </div>
       </Card>

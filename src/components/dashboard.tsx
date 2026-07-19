@@ -531,45 +531,60 @@ export function Dashboard() {
                 <h3 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
                   <History className="h-4 w-4" /> Histórico Recente de Verificações
                 </h3>
-              </div>
+        <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl relative overflow-hidden rounded-[2rem]">
+          <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent opacity-50" />
+          <CardContent className="p-8 space-y-6 relative z-10">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-3 tracking-tight text-foreground/90">
+                <History className="h-5 w-5 text-indigo-400" />
+                Histórico de Processamento
+              </h2>
               {analysisHistory.length > 0 && (
                 <Button 
-                  variant="link" 
-                  onClick={handleClearHistory} 
-                  className="text-rose-500 hover:text-rose-600 text-xs font-semibold h-auto p-0 border-0"
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setAnalysisHistory([]);
+                    localStorage.removeItem('pixelarmor_history');
+                  }}
+                  className="rounded-xl border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 font-semibold"
                 >
-                  Excluir
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Limpar Todos
                 </Button>
               )}
             </div>
-
+            
             {showHistoryList && (
               analysisHistory.length === 0 ? (
-                <p className="text-xs text-muted-foreground leading-relaxed pt-2">
-                  Nenhuma análise recente salva no seu navegador. Os resultados surgirão aqui quando você concluir uma verificação.
-                </p>
+                <div className="text-center py-12 px-4 rounded-2xl bg-white/5 border border-white/5 border-dashed">
+                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                    <History className="h-8 w-8 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">Nenhum registro de análise encontrado no dispositivo local.</p>
+                </div>
               ) : (
-                <div className="grid gap-3 pt-3 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-300">
+                <div className="grid gap-4 pt-4 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-500 slide-in-from-bottom-4">
                   {analysisHistory.map((item) => (
-                    <div key={item.id} className="p-4 rounded-xl border bg-accent/30 space-y-2.5">
-                      <div className="flex items-center justify-between text-[11px] text-muted-foreground font-semibold">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />
+                    <div key={item.id} className="p-5 rounded-2xl border border-white/5 bg-accent/20 hover:bg-accent/40 hover:border-white/10 transition-all duration-300 space-y-4 group">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
+                        <span className="flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                          <Calendar className="h-4 w-4" />
                           {item.date}
                         </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="p-1.5 bg-background rounded-lg border">
-                          <p className="text-[10px] text-muted-foreground font-medium">Arquivos</p>
-                          <p className="text-sm font-bold">{item.total}</p>
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="p-2 bg-background/50 rounded-xl border border-white/5">
+                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mb-1">Total</p>
+                          <p className="text-lg font-black">{item.total}</p>
                         </div>
-                        <div className="p-1.5 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/10">
-                          <p className="text-[10px] opacity-75 font-medium">Saudáveis</p>
-                          <p className="text-sm font-bold">{item.healthy}</p>
+                        <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl border border-emerald-500/20 shadow-inner">
+                          <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest mb-1">Bons</p>
+                          <p className="text-lg font-black">{item.healthy}</p>
                         </div>
-                        <div className="p-1.5 bg-rose-500/5 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/10">
-                          <p className="text-[10px] opacity-75 font-medium">Falhas</p>
-                          <p className="text-sm font-bold">{item.corrupted}</p>
+                        <div className="p-2 bg-rose-500/10 text-rose-500 rounded-xl border border-rose-500/20 shadow-inner">
+                          <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest mb-1">Falhas</p>
+                          <p className="text-lg font-black">{item.corrupted}</p>
                         </div>
                       </div>
                     </div>
