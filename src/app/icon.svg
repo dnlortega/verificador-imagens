@@ -1,0 +1,15 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGrad" x1="128" y1="20" x2="128" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818CF8"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="checkGrad" x1="72" y1="128" x2="184" y2="184" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E0E7FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="64" fill="#0F172A" />
+  <path d="M128 32L56 64V120C56 172.5 86.5 220 128 236C169.5 220 200 172.5 200 120V64L128 32Z" fill="url(#shieldGrad)" />
+  <path d="M112 168L72 128L88.5 111.5L112 135L167.5 79.5L184 96L112 168Z" fill="url(#checkGrad)" />
+</svg>
