@@ -328,6 +328,20 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                 <AlertTriangle className="h-4 w-4 animate-bounce" />
                 Arquivos Danificados Detectados ({corruptedItems.length})
               </h3>
+
+              <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                <textarea 
+                  readOnly 
+                  className="w-full h-28 p-3 text-[11px] font-mono bg-rose-500/5 border border-rose-500/20 rounded-xl text-rose-700 dark:text-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500/30 resize-y shadow-inner cursor-text"
+                  value={corruptedItems.map(item => item.fileName).join('\n')}
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                  title="Clique para selecionar e copiar todos os nomes"
+                  placeholder="Nenhum arquivo corrompido detectado..."
+                />
+                <p className="text-[10px] text-rose-500/70 mt-1 pl-1 font-semibold">
+                  Clique dentro da caixa acima para selecionar todos os nomes e copiar (Ctrl+C).
+                </p>
+              </div>
               
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {corruptedItems.map((item, idx) => (
