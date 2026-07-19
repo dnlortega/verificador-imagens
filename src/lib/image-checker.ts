@@ -367,33 +367,28 @@ async function detectHealthyHeight(img: HTMLImageElement): Promise<number> {
   // Lemos as linhas de baixo para cima
   for (let r = scanHeight - 1; r >= 0; r--) {
     const rowStart = r * rowBytes;
-    const firstR = data[rowStart];
-    const firstG = data[rowStart + 1];
-    const firstB = data[rowStart + 2];
-    const firstA = data[rowStart + 3];
-
-    let isUniform = true;
-    for (let c = 1; c < width; c++) {
+    let isRowCorrupted = true;
+    for (let c = 0; c < width; c++) {
       const pixelStart = rowStart + c * 4;
-      if (
-        data[pixelStart] !== firstR ||
-        data[pixelStart + 1] !== firstG ||
-        data[pixelStart + 2] !== firstB ||
-        data[pixelStart + 3] !== firstA
-      ) {
-        isUniform = false;
+      const pR = data[pixelStart];
+      const pG = data[pixelStart + 1];
+      const pB = data[pixelStart + 2];
+      const pA = data[pixelStart + 3];
+
+      // Aceita variações devido à compressão JPEG (artefatos)
+      const isGray = (pR >= 115 && pR <= 140) && (pG >= 115 && pG <= 140) && (pB >= 115 && pB <= 140);
+      const isBlack = pR <= 10 && pG <= 10 && pB <= 10;
+      const isTransparent = pA === 0;
+
+      // Se acharmos um único pixel que NÃO é falha, a linha é de foto real
+      if (!isGray && !isBlack && !isTransparent) {
+        isRowCorrupted = false;
         break;
       }
     }
 
-    if (isUniform) {
-      const isGray = (firstR >= 120 && firstR <= 136) && (firstG >= 120 && firstG <= 136) && (firstB >= 120 && firstB <= 136);
-      const isBlack = firstR === 0 && firstG === 0 && firstB === 0;
-      const isTransparent = firstA === 0;
-
-      if (isGray || isBlack || isTransparent) {
-        continue; // Linha corrompida detectada, continua subindo
-      }
+    if (isRowCorrupted) {
+      continue; // Linha corrompida detectada (só tem cinza/preto/transparente), continua subindo
     }
 
     // Encontramos pixels de foto válidos (ruído/variação de cor)
