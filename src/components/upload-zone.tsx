@@ -85,6 +85,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
   return (
     <div className="w-full">
       <input
+        id="file-upload"
         type="file"
         ref={fileInputRef}
         className="hidden"
@@ -93,6 +94,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
         onChange={handleFileChange}
       />
       <input
+        id="folder-upload"
         type="file"
         ref={folderInputRef}
         className="hidden"
@@ -134,27 +136,31 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4" onClick={(e) => e.stopPropagation()}>
             <Button 
+              asChild
               variant="outline" 
               size="lg" 
-              onClick={triggerFileInput}
               disabled={isProcessing}
-              className="rounded-xl hover:scale-105 duration-300 border-primary/20 hover:bg-primary/10 shadow-sm"
+              className={`rounded-xl hover:scale-105 duration-300 border-primary/20 hover:bg-primary/10 shadow-sm cursor-pointer ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
               title="Selecionar Imagens"
             >
-              <ImageIcon className="h-5 w-5 mr-2" />
-              Arquivos
+              <label htmlFor="file-upload" className="flex items-center">
+                <ImageIcon className="h-5 w-5 mr-2" />
+                Arquivos
+              </label>
             </Button>
             
             <Button 
+              asChild
               variant="outline" 
               size="lg" 
-              onClick={triggerFolderInput}
               disabled={isProcessing}
-              className="rounded-xl hover:scale-105 duration-300 border-primary/20 hover:bg-primary/10 shadow-sm"
+              className={`rounded-xl hover:scale-105 duration-300 border-primary/20 hover:bg-primary/10 shadow-sm cursor-pointer ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
               title="Selecionar Pasta"
             >
-              <FolderOpen className="h-5 w-5 mr-2" />
-              Pasta
+              <label htmlFor="folder-upload" className="flex items-center">
+                <FolderOpen className="h-5 w-5 mr-2" />
+                Pasta
+              </label>
             </Button>
           </div>
 
