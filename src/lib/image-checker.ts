@@ -112,7 +112,7 @@ async function checkMagicBytes(file: File): Promise<{ isValid: boolean; detected
 function checkCanvasPixelsForTruncation(img: ImageBitmap): boolean {
   try {
     const canvas = new OffscreenCanvas(img.width, img.height);
-    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true }) as OffscreenCanvasRenderingContext2D | null;
     if (!ctx) return false;
 
     ctx.drawImage(img, 0, 0);
@@ -419,7 +419,7 @@ async function detectHealthyHeight(img: HTMLImageElement): Promise<number> {
   const canvas = document.createElement('canvas');
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return img.naturalHeight;
 
   ctx.drawImage(img, 0, 0);
@@ -493,7 +493,7 @@ export function repairImageViaCanvas(file: File): Promise<Blob> {
         canvas.width = img.naturalWidth;
         canvas.height = healthyHeight; // Corta a barra cinza inferior
         
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (!ctx) {
           URL.revokeObjectURL(objectUrl);
           reject(new Error('Não foi possível obter contexto de rasterização 2D.'));
