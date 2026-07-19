@@ -96,11 +96,8 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
         type="file"
         ref={folderInputRef}
         className="hidden"
-        {...({
-          webkitdirectory: "",
-          directory: "",
-          multiple: true
-        } as any)}
+        {...({ webkitdirectory: "true", directory: "true" } as any)}
+        multiple
         onChange={handleFileChange}
       />
 
