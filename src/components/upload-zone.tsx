@@ -140,32 +140,22 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
             />
 
             {/* Botão de Arquivos via Label */}
-            <Button 
-              asChild
-              variant="outline" 
-              size="sm" 
-              disabled={isProcessing}
-              className={`w-full sm:min-w-[140px] h-10 font-normal shadow-none border-border cursor-pointer ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}
+            <label
+              htmlFor="file-upload"
+              className={`inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted hover:text-foreground h-10 px-4 text-sm font-medium transition-colors w-full sm:min-w-[140px] cursor-pointer shadow-none ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}
             >
-              <label htmlFor="file-upload" className="flex items-center justify-center w-full h-full">
-                <ImageIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                Arquivos
-              </label>
-            </Button>
+              <ImageIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+              Arquivos
+            </label>
             
             {/* Botão de Pasta via Label */}
-            <Button 
-              asChild
-              variant="outline" 
-              size="sm" 
-              disabled={isProcessing}
-              className={`w-full sm:min-w-[140px] h-10 font-normal shadow-none border-border cursor-pointer ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}
+            <label
+              htmlFor="folder-upload"
+              className={`inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted hover:text-foreground h-10 px-4 text-sm font-medium transition-colors w-full sm:min-w-[140px] cursor-pointer shadow-none ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}
             >
-              <label htmlFor="folder-upload" className="flex items-center justify-center w-full h-full">
-                <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
-                Pastas
-              </label>
-            </Button>
+              <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
+              Pastas
+            </label>
           </div>
 
           <div className="text-[11px] text-muted-foreground/60 pt-4">
