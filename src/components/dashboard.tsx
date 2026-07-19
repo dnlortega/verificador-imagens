@@ -58,19 +58,19 @@ function LivePreviewItem({ item }: { item: ImageCheckResult }) {
 
   return (
     <div 
-      className={`aspect-square rounded-xl border overflow-hidden flex items-center justify-center relative animate-in zoom-in-75 duration-300 transition-all
-        ${isHealthy ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/35 bg-rose-500/10'}
+      className={`aspect-square rounded-2xl border overflow-hidden flex items-center justify-center relative animate-in zoom-in-75 duration-500 transition-all shadow-sm group
+        ${isHealthy ? 'border-emerald-500/20 bg-emerald-500/5 hover:shadow-emerald-500/20 hover:-translate-y-1' : 'border-rose-500/35 bg-rose-500/10 hover:shadow-rose-500/20 hover:-translate-y-1'}
       `}
       title={`${item.fileName} (${isHealthy ? 'OK' : item.errorReason})`}
     >
       {isHealthy && src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" className="h-full w-full object-cover" />
+        <img src={src} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
       ) : (
-        <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse" />
+        <AlertTriangle className="h-6 w-6 text-rose-500 animate-pulse drop-shadow-md" />
       )}
       
-      <span className={`absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-background
+      <span className={`absolute bottom-2 right-2 h-3 w-3 rounded-full border-2 border-background shadow-sm
         ${isHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}
       `} />
     </div>
@@ -327,21 +327,24 @@ export function Dashboard() {
   const realTimeCorruptedList = results.filter(r => r.status === 'corrupted');
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto px-4 py-8">
+    <div className="space-y-8 max-w-6xl mx-auto px-4 py-10 relative z-10">
       {/* Cabeçalho do App */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/10 pb-8 relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent opacity-50 blur-xl -z-10"></div>
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white shadow-lg shadow-primary/30">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent drop-shadow-sm">
               PixelArmor
             </h1>
-            <Badge variant="outline" className="rounded-full gap-1 border-primary/20 bg-primary/5 text-primary text-[10px] px-2.5 py-0.5 font-bold">
-              <Sparkles className="h-3 w-3" />
-              100% Shadcn & Ultra-Ágil
+            <Badge variant="outline" className="rounded-full gap-1 border-primary/30 bg-primary/10 text-primary text-[11px] px-3 py-0.5 font-bold shadow-sm backdrop-blur-md">
+              Ultra-Ágil
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-            Validador ágil de imagens com decodificação local otimizada e análise profunda de assinaturas de arquivo contra corrupções e arquivos fantasmas.
+          <p className="text-sm text-muted-foreground mt-3 leading-relaxed max-w-2xl font-medium">
+            Validador avançado de imagens com decodificação local otimizada e análise profunda de assinaturas de arquivo contra corrupções e arquivos fantasmas.
           </p>
         </div>
         

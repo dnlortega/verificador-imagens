@@ -105,12 +105,12 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
       />
 
       <Card
-        className={`relative flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-2xl transition-all duration-300 min-h-[300px] text-center cursor-pointer select-none
+        className={`relative flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-3xl transition-all duration-500 min-h-[300px] text-center cursor-pointer select-none glass-card overflow-hidden group
           ${isDragActive 
-            ? 'border-primary bg-primary/5 scale-[0.99] shadow-inner' 
-            : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-accent/30'
+            ? 'border-primary bg-primary/10 scale-[1.02] glow-effect' 
+            : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-white/5 dark:hover:bg-white/5'
           }
-          ${isProcessing ? 'opacity-60 cursor-not-allowed' : ''}
+          ${isProcessing ? 'opacity-60 cursor-not-allowed grayscale-[0.5]' : ''}
         `}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
@@ -118,49 +118,55 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
         onDrop={handleDrop}
         onClick={isProcessing ? undefined : triggerFileInput}
       >
-        <div className="flex flex-col items-center space-y-4 max-w-md">
-          <div className="p-4 rounded-full bg-primary/10 text-primary animate-pulse">
+        {/* Subtle background glow circle on hover */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/0 via-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+        <div className="flex flex-col items-center space-y-6 max-w-md relative z-10">
+          <div className={`p-5 rounded-2xl transition-all duration-500 ${isDragActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110 animate-bounce' : 'bg-primary/10 text-primary group-hover:bg-primary/20'}`}>
             <Upload className="h-10 w-10" />
           </div>
           
-          <div className="space-y-2">
-            <h3 className="text-xl font-semibold tracking-tight">
+          <div className="space-y-3">
+            <h3 className="text-2xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
               Arraste e solte seus arquivos aqui
             </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Arraste imagens individuais ou uma <strong className="text-foreground">pasta inteira</strong> para verificação instantânea.
+            <p className="text-sm text-muted-foreground leading-relaxed px-4">
+              Arraste imagens individuais ou uma <strong className="text-foreground font-medium">pasta inteira</strong> para verificação instantânea na nuvem.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4" onClick={(e) => e.stopPropagation()}>
             <Button 
               variant="outline" 
-              size="icon" 
+              size="lg" 
               onClick={triggerFileInput}
               disabled={isProcessing}
-              className="h-10 w-10 rounded-xl hover:scale-105 duration-200"
+              className="rounded-xl hover:scale-105 duration-300 border-primary/20 hover:bg-primary/10 shadow-sm"
               title="Selecionar Imagens"
             >
-              <ImageIcon className="h-5 w-5" />
+              <ImageIcon className="h-5 w-5 mr-2" />
+              Imagens
             </Button>
             
             <Button 
-              variant="secondary" 
-              size="icon" 
+              variant="outline" 
+              size="lg" 
               onClick={triggerFolderInput}
               disabled={isProcessing}
-              className="h-10 w-10 rounded-xl hover:scale-105 duration-200"
+              className="rounded-xl hover:scale-105 duration-300 border-primary/20 hover:bg-primary/10 shadow-sm"
               title="Selecionar Pasta"
             >
-              <FolderOpen className="h-5 w-5" />
+              <FolderOpen className="h-5 w-5 mr-2" />
+              Pasta
             </Button>
           </div>
 
-          <div className="text-xs text-muted-foreground/75 pt-6">
-            Formatos suportados: JPEG, PNG, WEBP, GIF, BMP, SVG (Max. recomendado: 200MB por arquivo)
+          <div className="text-xs text-muted-foreground/60 pt-6 font-medium">
+            Formatos: JPEG, PNG, WEBP, GIF, BMP, SVG (Max: 200MB/arquivo)
           </div>
         </div>
       </Card>
     </div>
   );
 }
+
