@@ -172,23 +172,23 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
           <div className="flex gap-2 shrink-0">
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               onClick={() => onExport('csv')}
               disabled={results.length === 0}
-              className="h-10 rounded-xl font-medium gap-1.5"
+              className="h-10 w-10 rounded-xl"
+              title="Exportar CSV"
             >
               <Download className="h-4 w-4" />
-              CSV
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               onClick={() => onExport('json')}
               disabled={results.length === 0}
-              className="h-10 rounded-xl font-medium gap-1.5"
+              className="h-10 w-10 rounded-xl"
+              title="Exportar JSON"
             >
               <Download className="h-4 w-4" />
-              JSON
             </Button>
           </div>
         </div>
@@ -355,9 +355,10 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                       <div className="pt-2.5 border-t border-rose-500/10 flex items-center justify-between">
                         <span className="text-[9px] font-bold text-muted-foreground">FORMATO: {item.fileType} ({item.durationMs}ms)</span>
                         <Button
-                          size="sm"
+                          size="icon"
                           variant="ghost"
-                          className="h-7 px-2 text-[10px] font-bold gap-1 rounded-lg text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-500/10 border-0 shrink-0"
+                          className="h-7 w-7 rounded-lg text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-500/10 border-0 shrink-0"
+                          title="Tentar Corrigir e Baixar"
                           onClick={async (e) => {
                             e.stopPropagation();
                             const toastId = toast.loading(`Corrigindo ${item.fileName}...`);
@@ -384,8 +385,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                             }
                           }}
                         >
-                          <Wrench className="h-3 w-3" />
-                          Corrigir
+                          <Wrench className="h-4 w-4" />
                         </Button>
                       </div>
                     </CardContent>

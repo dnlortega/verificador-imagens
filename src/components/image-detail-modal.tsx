@@ -198,23 +198,21 @@ export function ImageDetailModal({ result, isOpen, onClose }: ImageDetailModalPr
                   </p>
                 </div>
                 
-                <Button
-                  onClick={handleRepair}
-                  disabled={isRepairing}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white font-bold text-xs gap-2 shadow-md transition-all duration-300 hover:scale-[1.02] border-0"
-                >
-                  {isRepairing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Reparando Imagem...
-                    </>
-                  ) : (
-                    <>
-                      <Wrench className="h-4 w-4 animate-pulse" />
-                      Tentar Corrigir e Baixar
-                    </>
-                  )}
-                </Button>
+                <div className="flex justify-center pt-2">
+                  <Button
+                    onClick={handleRepair}
+                    disabled={isRepairing}
+                    size="icon"
+                    className="h-11 w-11 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md transition-all duration-300 hover:scale-[1.05] border-0 shrink-0"
+                    title="Tentar Corrigir e Baixar Imagem"
+                  >
+                    {isRepairing ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Wrench className="h-5 w-5" />
+                    )}
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="p-4 border border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300 rounded-xl space-y-1">

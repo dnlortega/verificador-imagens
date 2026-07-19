@@ -26,7 +26,8 @@ import {
   ChevronUp,
   FileImage,
   AlertOctagon,
-  Calendar
+  Calendar,
+  XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -87,6 +88,8 @@ export function Dashboard() {
   const [concurrency, setConcurrency] = useState<number>(12); // Padrão agora é 12 para agilizar
   const [showConfig, setShowConfig] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showMissing, setShowMissing] = useState(true);
+  const [showHistoryList, setShowHistoryList] = useState(true);
   
   // Histórico
   const [analysisHistory, setAnalysisHistory] = useState<HistoryEntry[]>([]);
@@ -347,42 +350,43 @@ export function Dashboard() {
           
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => {
               setShowConfig(!showConfig);
               setShowHistory(false);
             }}
-            className={`rounded-xl h-10 px-3.5 gap-1.5 font-semibold text-xs transition-colors duration-200
+            className={`rounded-xl h-10 w-10 transition-all duration-200
               ${showConfig ? 'bg-primary/10 text-primary border-primary/30' : ''}
             `}
+            title="Configurações de Otimização"
           >
-            <Settings2 className="h-4 w-4" />
-            Configurações
+            <Settings2 className="h-5 w-5" />
           </Button>
 
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => {
               setShowHistory(!showHistory);
               setShowConfig(false);
             }}
-            className={`rounded-xl h-10 px-3.5 gap-1.5 font-semibold text-xs transition-colors duration-200
+            className={`rounded-xl h-10 w-10 transition-all duration-200
               ${showHistory ? 'bg-primary/10 text-primary border-primary/30' : ''}
             `}
+            title="Histórico de Verificações"
           >
-            <History className="h-4 w-4" />
-            Histórico
+            <History className="h-5 w-5" />
           </Button>
 
           {results.length > 0 && !isProcessing && (
             <Button
               variant="destructive"
+              size="icon"
               onClick={handleClear}
-              className="rounded-xl h-10 px-3.5 gap-1.5 font-semibold text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-0"
+              className="rounded-xl h-10 w-10 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-0"
+              title="Limpar Resultados"
             >
-              <Trash2 className="h-4 w-4" />
-              Limpar
+              <Trash2 className="h-5 w-5" />
             </Button>
           )}
         </div>
@@ -427,52 +431,65 @@ export function Dashboard() {
       {showHistory && (
         <Card className="border border-primary/20 bg-background/50 backdrop-blur-lg rounded-2xl animate-in fade-in-50 slide-in-from-top-4 duration-300">
           <CardContent className="p-6 space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                <History className="h-4 w-4" /> Histórico Recente de Verificações
-              </h3>
+            <div className="flex justify-between items-center border-b pb-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowHistoryList(!showHistoryList)}
+                  className="h-8 w-8 rounded-lg border-0 hover:bg-accent"
+                  title={showHistoryList ? "Ocultar Histórico" : "Exibir Histórico"}
+                >
+                  {showHistoryList ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  <History className="h-4 w-4" /> Histórico Recente de Verificações
+                </h3>
+              </div>
               {analysisHistory.length > 0 && (
                 <Button 
                   variant="link" 
                   onClick={handleClearHistory} 
-                  className="text-rose-500 hover:text-rose-600 text-xs font-semibold h-auto p-0"
+                  className="text-rose-500 hover:text-rose-600 text-xs font-semibold h-auto p-0 border-0"
                 >
-                  Excluir Histórico
+                  Excluir
                 </Button>
               )}
             </div>
 
-            {analysisHistory.length === 0 ? (
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Nenhuma análise recente salva no seu navegador. Os resultados surgirão aqui quando você concluir uma verificação.
-              </p>
-            ) : (
-              <div className="grid gap-3 pt-2 md:grid-cols-2 lg:grid-cols-3">
-                {analysisHistory.map((item) => (
-                  <div key={item.id} className="p-4 rounded-xl border bg-accent/30 space-y-2.5">
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground font-semibold">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {item.date}
-                      </span>
+            {showHistoryList && (
+              analysisHistory.length === 0 ? (
+                <p className="text-xs text-muted-foreground leading-relaxed pt-2">
+                  Nenhuma análise recente salva no seu navegador. Os resultados surgirão aqui quando você concluir uma verificação.
+                </p>
+              ) : (
+                <div className="grid gap-3 pt-3 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-300">
+                  {analysisHistory.map((item) => (
+                    <div key={item.id} className="p-4 rounded-xl border bg-accent/30 space-y-2.5">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground font-semibold">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {item.date}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="p-1.5 bg-background rounded-lg border">
+                          <p className="text-[10px] text-muted-foreground font-medium">Arquivos</p>
+                          <p className="text-sm font-bold">{item.total}</p>
+                        </div>
+                        <div className="p-1.5 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/10">
+                          <p className="text-[10px] opacity-75 font-medium">Saudáveis</p>
+                          <p className="text-sm font-bold">{item.healthy}</p>
+                        </div>
+                        <div className="p-1.5 bg-rose-500/5 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/10">
+                          <p className="text-[10px] opacity-75 font-medium">Falhas</p>
+                          <p className="text-sm font-bold">{item.corrupted}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="p-1.5 bg-background rounded-lg border">
-                        <p className="text-[10px] text-muted-foreground font-medium">Arquivos</p>
-                        <p className="text-sm font-bold">{item.total}</p>
-                      </div>
-                      <div className="p-1.5 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/10">
-                        <p className="text-[10px] opacity-75 font-medium">Saudáveis</p>
-                        <p className="text-sm font-bold">{item.healthy}</p>
-                      </div>
-                      <div className="p-1.5 bg-rose-500/5 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/10">
-                        <p className="text-[10px] opacity-75 font-medium">Falhas</p>
-                        <p className="text-sm font-bold">{item.corrupted}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )
             )}
           </CardContent>
         </Card>
@@ -497,11 +514,12 @@ export function Dashboard() {
               </div>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={handleCancel}
-                className="rounded-xl font-bold border-rose-500/30 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
+                className="rounded-xl border-rose-500/30 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500 transition-all duration-200"
+                title="Parar Verificação"
               >
-                Parar Verificação
+                <XCircle className="h-5 w-5" />
               </Button>
             </div>
 
@@ -575,12 +593,12 @@ export function Dashboard() {
               </span>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={copyCorruptedDeleteCommand}
-                className="h-9 px-3 rounded-xl gap-1.5 text-xs font-semibold hover:border-rose-500/20 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                className="h-9 w-9 rounded-xl hover:border-rose-500/20 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-200"
+                title="Copiar Comando de Exclusão (CMD)"
               >
-                <Copy className="h-3.5 w-3.5" />
-                Copiar Comando de Exclusão (CMD)
+                <Copy className="h-4 w-4" />
               </Button>
             </div>
           )}
@@ -589,45 +607,59 @@ export function Dashboard() {
           {missingSequences.length > 0 && !isProcessing && (
             <Card className="border border-amber-500/25 bg-amber-500/5 dark:bg-amber-950/10 backdrop-blur-md rounded-2xl animate-in fade-in-50 duration-300">
               <CardContent className="p-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <AlertTriangle className="h-5 w-5 animate-pulse" />
+                <div className="flex items-start justify-between gap-3 border-b pb-2">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                      <AlertTriangle className="h-5 w-5 animate-pulse" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-amber-800 dark:text-amber-400">
+                        Imagens Ausentes na Sequência Numérica
+                      </h3>
+                      <p className="text-xs text-amber-700/80 dark:text-amber-500/80 leading-relaxed">
+                        Detectamos que a pasta analisada possui sequências numéricas e que algumas imagens estão faltando na ordem.
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base font-bold text-amber-800 dark:text-amber-400">
-                      Imagens Ausentes na Sequência Numérica
-                    </h3>
-                    <p className="text-xs text-amber-700/80 dark:text-amber-500/80 leading-relaxed">
-                      Detectamos que a pasta analisada possui sequências numéricas e que algumas imagens estão faltando na ordem.
-                    </p>
-                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowMissing(!showMissing)}
+                    className="h-8 w-8 rounded-lg border-0 shrink-0 hover:bg-amber-500/10"
+                    title={showMissing ? "Ocultar Lista" : "Exibir Lista"}
+                  >
+                    {showMissing ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
                 </div>
 
-                <div className="space-y-3.5">
-                  {missingSequences.map((seq, idx) => (
-                    <div key={idx} className="p-4 rounded-xl border border-amber-500/10 bg-amber-500/5/30 space-y-2.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-semibold text-amber-800 dark:text-amber-300">
-                          Padrão: <code className="bg-amber-500/10 px-1.5 py-0.5 rounded font-mono font-bold">{seq.pattern}</code>
-                        </span>
-                        <span className="text-amber-700/80 dark:text-amber-400/80">
-                          Intervalo: <strong className="font-bold">{seq.min}</strong> a <strong className="font-bold">{seq.max}</strong>
-                        </span>
+                {showMissing && (
+                  <div className="space-y-3.5 pt-2 animate-in fade-in duration-300">
+                    {missingSequences.map((seq, idx) => (
+                      <div key={idx} className="p-4 rounded-xl border border-amber-500/10 bg-amber-500/5/30 space-y-2.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold text-amber-800 dark:text-amber-300">
+                            Padrão: <code className="bg-amber-500/10 px-1.5 py-0.5 rounded font-mono font-bold">{seq.pattern}</code>
+                          </span>
+                          <span className="text-amber-700/80 dark:text-amber-400/80">
+                            Intervalo: <strong className="font-bold">{seq.min}</strong> a <strong className="font-bold">{seq.max}</strong>
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {seq.missingFiles.map((file, fileIdx) => (
+                            <Badge 
+                              key={fileIdx} 
+                              variant="outline" 
+                              className="border-amber-500/20 bg-amber-500/5 text-amber-700 dark:text-amber-400 text-xs py-0.5 px-2.5 font-medium rounded-lg"
+                            >
+                              {file}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {seq.missingFiles.map((file, fileIdx) => (
-                          <Badge 
-                            key={fileIdx} 
-                            variant="outline" 
-                            className="border-amber-500/20 bg-amber-500/5 text-amber-700 dark:text-amber-400 text-xs py-0.5 px-2.5 font-medium rounded-lg"
-                          >
-                            {file}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

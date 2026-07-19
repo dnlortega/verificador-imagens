@@ -132,27 +132,27 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-4" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2" onClick={(e) => e.stopPropagation()}>
             <Button 
               variant="outline" 
-              size="sm" 
+              size="icon" 
               onClick={triggerFileInput}
               disabled={isProcessing}
-              className="h-10 px-4 rounded-xl gap-2 font-medium"
+              className="h-10 w-10 rounded-xl hover:scale-105 duration-200"
+              title="Selecionar Imagens"
             >
-              <ImageIcon className="h-4 w-4" />
-              Selecionar Imagens
+              <ImageIcon className="h-5 w-5" />
             </Button>
             
             <Button 
               variant="secondary" 
-              size="sm" 
+              size="icon" 
               onClick={triggerFolderInput}
               disabled={isProcessing}
-              className="h-10 px-4 rounded-xl gap-2 font-medium"
+              className="h-10 w-10 rounded-xl hover:scale-105 duration-200"
+              title="Selecionar Pasta"
             >
-              <FolderOpen className="h-4 w-4" />
-              Selecionar Pasta
+              <FolderOpen className="h-5 w-5" />
             </Button>
           </div>
 
