@@ -10,15 +10,33 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { 
   Play, 
   Trash2, 
   AlertTriangle, 
   Clock, 
   Cpu, 
-  Sparkles 
+  Sparkles,
+  Settings2,
+  History,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  FileImage,
+  AlertOctagon,
+  Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface HistoryEntry {
+  id: string;
+  date: string;
+  total: number;
+  healthy: number;
+  corrupted: number;
+}
 
 export function Dashboard() {
   const [results, setResults] = useState<ImageCheckResult[]>([]);
@@ -27,6 +45,14 @@ export function Dashboard() {
   const [progress, setProgress] = useState(0);
   const [currentFileChecking, setCurrentFileChecking] = useState('');
   
+  // Configurações
+  const [concurrency, setConcurrency] = useState<number>(12); // Padrão agora é 12 para agilizar
+  const [showConfig, setShowConfig] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  
+  // Histórico
+  const [analysisHistory, setAnalysisHistory] = useState<HistoryEntry[]>([]);
+
   // Estatísticas de performance
   const [processedCount, setProcessedCount] = useState(0);
   const [healthyCount, setHealthyCount] = useState(0);
@@ -35,13 +61,43 @@ export function Dashboard() {
   const [speed, setSpeed] = useState(0);
   const [eta, setEta] = useState(0);
 
-  // Controle de cancelamento
+  // Controle de cancelamento e tempo
   const cancelRef = useRef(false);
   const startTimeRef = useRef<number | null>(null);
 
   // Modal de Detalhes
   const [selectedResult, setSelectedResult] = useState<ImageCheckResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Carregar histórico local
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('pixelarmor_history');
+      if (stored) {
+        setAnalysisHistory(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error('Falha ao ler o histórico:', e);
+    }
+  }, []);
+
+  // Salvar entrada no histórico
+  const saveToHistory = (total: number, healthy: number, corrupted: number) => {
+    try {
+      const newEntry: HistoryEntry = {
+        id: Math.random().toString(36).substring(2, 9),
+        date: new Date().toLocaleString('pt-BR'),
+        total,
+        healthy,
+        corrupted
+      };
+      const updated = [newEntry, ...analysisHistory].slice(0, 5); // Guardar apenas as 5 últimas
+      setAnalysisHistory(updated);
+      localStorage.setItem('pixelarmor_history', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Falha ao salvar no histórico:', e);
+    }
+  };
 
   const handleFilesSelected = async (files: File[]) => {
     setIsProcessing(true);
@@ -55,15 +111,12 @@ export function Dashboard() {
     setMissingSequences([]);
     
     startTimeRef.current = Date.now();
-    toast.success(`Iniciando análise de ${files.length} imagens...`);
+    toast.success(`Iniciando análise ágil de ${files.length} imagens...`);
 
-    // Fila de processamento com concorrência limite (ex: 6 arquivos por vez)
-    const CONCURRENCY_LIMIT = 6;
     const resultsBuffer: ImageCheckResult[] = [];
     let activeWorkers = 0;
     let nextIndex = 0;
     
-    // Contadores locais para atualizar o estado de forma agregada e suave
     let localProcessed = 0;
     let localHealthy = 0;
     let localCorrupted = 0;
@@ -82,6 +135,9 @@ export function Dashboard() {
         const result = await checkImageFile(file);
         resultsBuffer.push(result);
         
+        // Atualizar resultados em tempo real para o usuário ver os dados surgindo de forma ágil
+        setResults(prev => [...prev, result]);
+
         localProcessed++;
         if (result.status === 'healthy') {
           localHealthy++;
@@ -89,39 +145,34 @@ export function Dashboard() {
           localCorrupted++;
         }
 
-        // Atualizar estatísticas em tempo real de forma eficiente
-        if (localProcessed % 1 === 0 || localProcessed === files.length) {
-          // Atualizar estados
-          setProcessedCount(localProcessed);
-          setHealthyCount(localHealthy);
-          setCorruptedCount(localCorrupted);
-          setProgress(Math.round((localProcessed / files.length) * 100));
+        // Atualizar estatísticas e velocidade
+        setProcessedCount(localProcessed);
+        setHealthyCount(localHealthy);
+        setCorruptedCount(localCorrupted);
+        setProgress(Math.round((localProcessed / files.length) * 100));
 
-          // Calcular performance (velocidade e ETA)
-          if (startTimeRef.current) {
-            const elapsedSeconds = (Date.now() - startTimeRef.current) / 1000;
-            const currentSpeed = elapsedSeconds > 0 ? localProcessed / elapsedSeconds : 0;
-            setSpeed(currentSpeed);
-            
-            const remainingFiles = files.length - localProcessed;
-            const currentEta = currentSpeed > 0 ? remainingFiles / currentSpeed : 0;
-            setEta(currentEta);
-          }
+        if (startTimeRef.current) {
+          const elapsedSeconds = (Date.now() - startTimeRef.current) / 1000;
+          const currentSpeed = elapsedSeconds > 0 ? localProcessed / elapsedSeconds : 0;
+          setSpeed(currentSpeed);
+          
+          const remainingFiles = files.length - localProcessed;
+          const currentEta = currentSpeed > 0 ? remainingFiles / currentSpeed : 0;
+          setEta(currentEta);
         }
       } catch (err) {
         console.error('Erro ao processar arquivo:', file.name, err);
       } finally {
         activeWorkers--;
-        // Se ainda houver arquivos e não foi cancelado, puxa o próximo
         if (nextIndex < files.length && !cancelRef.current) {
           await processNext();
         }
       }
     };
 
-    // Inicializar os workers
+    // Inicializar os workers baseados no slider de concorrência
     const initialWorkers: Promise<void>[] = [];
-    const limit = Math.min(CONCURRENCY_LIMIT, files.length);
+    const limit = Math.min(concurrency, files.length);
     for (let i = 0; i < limit; i++) {
       initialWorkers.push(processNext());
     }
@@ -130,7 +181,6 @@ export function Dashboard() {
 
     setIsProcessing(false);
     setCurrentFileChecking('');
-    setResults([...resultsBuffer]);
 
     // Detectar imagens ausentes na ordem numérica dos arquivos
     const fileNames = files.map(f => f.name);
@@ -141,6 +191,7 @@ export function Dashboard() {
       toast.warning('A análise foi cancelada pelo usuário.');
     } else {
       toast.success(`Análise concluída! ${localHealthy} saudáveis, ${localCorrupted} corrompidas.`);
+      saveToHistory(files.length, localHealthy, localCorrupted);
     }
   };
 
@@ -159,7 +210,13 @@ export function Dashboard() {
     setProgress(0);
     setSpeed(0);
     setEta(0);
-    toast.info('Dados resetados com sucesso.');
+    toast.info('Dados de visualização resetados.');
+  };
+
+  const handleClearHistory = () => {
+    setAnalysisHistory([]);
+    localStorage.removeItem('pixelarmor_history');
+    toast.success('Histórico de análises removido do navegador.');
   };
 
   const handleSelectResult = (result: ImageCheckResult) => {
@@ -167,19 +224,29 @@ export function Dashboard() {
     setIsModalOpen(true);
   };
 
+  const copyCorruptedDeleteCommand = () => {
+    const corruptedFiles = results.filter(r => r.status === 'corrupted');
+    if (corruptedFiles.length === 0) return;
+    // Cria comando no formato Windows
+    const command = `del /F /Q ${corruptedFiles.map(r => `"${r.fileName}"`).join(' ')}`;
+    navigator.clipboard.writeText(command);
+    toast.success('Comando CMD (del) copiado com sucesso! Cole no terminal.');
+  };
+
   const handleExport = (format: 'csv' | 'json') => {
     if (results.length === 0) return;
 
     let content = '';
     let mimeType = 'text/plain';
-    let filename = `relatorio-verificacao-${Date.now()}`;
+    let filename = `relatorio-pixelarmor-${Date.now()}`;
 
     if (format === 'json') {
-      const exportData = results.map(({ fileName, fileSize, fileType, status, errorReason, dimensions }) => ({
+      const exportData = results.map(({ fileName, fileSize, fileType, status, errorReason, dimensions, durationMs }) => ({
         fileName,
         fileSize,
         fileType,
         status,
+        durationMs,
         errorReason: errorReason || null,
         dimensions: dimensions ? `${dimensions.width}x${dimensions.height}` : null
       }));
@@ -187,12 +254,13 @@ export function Dashboard() {
       mimeType = 'application/json';
       filename += '.json';
     } else if (format === 'csv') {
-      const headers = ['Nome', 'Tamanho (Bytes)', 'Formato', 'Status', 'Motivo do Erro', 'Dimensões'];
+      const headers = ['Nome', 'Tamanho (Bytes)', 'Formato', 'Status', 'Tempo de Análise (ms)', 'Motivo do Erro', 'Dimensões'];
       const rows = results.map(item => [
         `"${item.fileName.replace(/"/g, '""')}"`,
         item.fileSize,
         item.fileType,
         item.status === 'healthy' ? 'Saudavel' : 'Corrompido',
+        item.durationMs,
         `"${(item.errorReason || '').replace(/"/g, '""')}"`,
         item.dimensions ? `"${item.dimensions.width}x${item.dimensions.height}"` : ''
       ]);
@@ -214,49 +282,176 @@ export function Dashboard() {
     toast.success(`Relatório exportado em ${format.toUpperCase()}!`);
   };
 
+  // Filtrar as últimas imagens corrompidas para exibir em tempo real na barra lateral
+  const realTimeCorruptedList = results.filter(r => r.status === 'corrupted');
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto px-4 py-8">
       {/* Cabeçalho do App */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent">
               PixelArmor
             </h1>
-            <Badge variant="outline" className="rounded-full gap-1 border-primary/20 bg-primary/5 text-primary text-[10px] px-2 py-0.5">
+            <Badge variant="outline" className="rounded-full gap-1 border-primary/20 bg-primary/5 text-primary text-[10px] px-2.5 py-0.5 font-bold">
               <Sparkles className="h-3 w-3" />
-              100% Shadcn & Local
+              100% Shadcn & Ultra-Ágil
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Validador de imagens ultrarrápido com análise de assinaturas binárias (Magic Bytes) e renderização gráfica no Canvas.
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+            Validador ágil de imagens com decodificação local otimizada e análise profunda de assinaturas de arquivo contra corrupções e arquivos fantasmas.
           </p>
         </div>
         
-        {results.length > 0 && !isProcessing && (
+        <div className="flex items-center gap-2 shrink-0">
+          <ThemeToggle />
+          
           <Button
-            variant="destructive"
-            onClick={handleClear}
-            className="rounded-xl flex gap-2 font-medium text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-0"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setShowConfig(!showConfig);
+              setShowHistory(false);
+            }}
+            className={`rounded-xl h-10 px-3.5 gap-1.5 font-semibold text-xs transition-colors duration-200
+              ${showConfig ? 'bg-primary/10 text-primary border-primary/30' : ''}
+            `}
           >
-            <Trash2 className="h-4 w-4" />
-            Limpar Resultados
+            <Settings2 className="h-4 w-4" />
+            Configurações
           </Button>
-        )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setShowHistory(!showHistory);
+              setShowConfig(false);
+            }}
+            className={`rounded-xl h-10 px-3.5 gap-1.5 font-semibold text-xs transition-colors duration-200
+              ${showHistory ? 'bg-primary/10 text-primary border-primary/30' : ''}
+            `}
+          >
+            <History className="h-4 w-4" />
+            Histórico
+          </Button>
+
+          {results.length > 0 && !isProcessing && (
+            <Button
+              variant="destructive"
+              onClick={handleClear}
+              className="rounded-xl h-10 px-3.5 gap-1.5 font-semibold text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-0"
+            >
+              <Trash2 className="h-4 w-4" />
+              Limpar
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Painel de Configurações Colapsável */}
+      {showConfig && (
+        <Card className="border border-primary/20 bg-background/50 backdrop-blur-lg rounded-2xl animate-in fade-in-50 slide-in-from-top-4 duration-300">
+          <CardContent className="p-6 space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+              <Settings2 className="h-4 w-4" /> Configurações de Otimização
+            </h3>
+            
+            <div className="space-y-3.5 max-w-md pt-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold">Nível de Concorrência de Fila</span>
+                <Badge variant="outline" className="font-mono bg-accent font-bold">
+                  {concurrency} Workers Simultâneos
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Determina quantas imagens o navegador analisará ao mesmo tempo. Valores maiores aceleram a análise, mas podem usar mais CPU. Recomendado: 12.
+              </p>
+              <Slider
+                value={[concurrency]}
+                onValueChange={(val) => {
+                  if (Array.isArray(val) && val.length > 0) {
+                    setConcurrency(val[0]);
+                  }
+                }}
+                min={1}
+                max={24}
+                step={1}
+                className="py-2"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Painel de Histórico Colapsável */}
+      {showHistory && (
+        <Card className="border border-primary/20 bg-background/50 backdrop-blur-lg rounded-2xl animate-in fade-in-50 slide-in-from-top-4 duration-300">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                <History className="h-4 w-4" /> Histórico Recente de Verificações
+              </h3>
+              {analysisHistory.length > 0 && (
+                <Button 
+                  variant="link" 
+                  onClick={handleClearHistory} 
+                  className="text-rose-500 hover:text-rose-600 text-xs font-semibold h-auto p-0"
+                >
+                  Excluir Histórico
+                </Button>
+              )}
+            </div>
+
+            {analysisHistory.length === 0 ? (
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Nenhuma análise recente salva no seu navegador. Os resultados surgirão aqui quando você concluir uma verificação.
+              </p>
+            ) : (
+              <div className="grid gap-3 pt-2 md:grid-cols-2 lg:grid-cols-3">
+                {analysisHistory.map((item) => (
+                  <div key={item.id} className="p-4 rounded-xl border bg-accent/30 space-y-2.5">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground font-semibold">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {item.date}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-1.5 bg-background rounded-lg border">
+                        <p className="text-[10px] text-muted-foreground font-medium">Arquivos</p>
+                        <p className="text-sm font-bold">{item.total}</p>
+                      </div>
+                      <div className="p-1.5 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/10">
+                        <p className="text-[10px] opacity-75 font-medium">Saudáveis</p>
+                        <p className="text-sm font-bold">{item.healthy}</p>
+                      </div>
+                      <div className="p-1.5 bg-rose-500/5 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/10">
+                        <p className="text-[10px] opacity-75 font-medium">Falhas</p>
+                        <p className="text-sm font-bold">{item.corrupted}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Upload Zone */}
       <UploadZone onFilesSelected={handleFilesSelected} isProcessing={isProcessing} />
 
       {/* Progress & Cancel Panel */}
       {isProcessing && (
-        <Card className="border border-primary/10 bg-primary/5/20 backdrop-blur-md overflow-hidden relative">
+        <Card className="border border-primary/15 bg-primary/5/15 backdrop-blur-md overflow-hidden relative rounded-2xl animate-pulse">
           <CardContent className="p-6 space-y-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
               <div className="space-y-1">
-                <p className="text-sm font-semibold flex items-center gap-2">
-                  <Cpu className="h-4 w-4 text-primary animate-spin" />
-                  Verificando imagem: <span className="text-primary truncate max-w-[250px] inline-block align-bottom">{currentFileChecking}</span>
+                <p className="text-sm font-bold flex items-center gap-2">
+                  <Cpu className="h-4.5 w-4.5 text-primary animate-spin" />
+                  Analisando: <span className="text-primary truncate max-w-[320px] font-mono font-semibold">{currentFileChecking}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Processando {processedCount} de {totalFiles} imagens...
@@ -274,7 +469,7 @@ export function Dashboard() {
 
             <div className="space-y-2">
               <Progress value={progress} className="h-2.5 rounded-full" />
-              <div className="flex justify-between text-xs text-muted-foreground font-medium">
+              <div className="flex justify-between text-xs text-muted-foreground font-semibold">
                 <span className="flex items-center gap-1">
                   <Play className="h-3 w-3" />
                   Progresso: {progress}%
@@ -284,6 +479,25 @@ export function Dashboard() {
                   Velocidade: {speed.toFixed(1)} imagens/s
                 </span>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Grid Lateral de Imagens Corrompidas em Tempo Real */}
+      {isProcessing && realTimeCorruptedList.length > 0 && (
+        <Card className="border border-rose-500/20 bg-rose-500/5 rounded-2xl animate-in fade-in-50 duration-200">
+          <CardContent className="p-5 space-y-3">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+              <AlertOctagon className="h-4.5 w-4.5" /> Danos Detectados em Tempo Real ({realTimeCorruptedList.length})
+            </h4>
+            <div className="max-h-[120px] overflow-y-auto space-y-1.5 pr-2 font-mono text-[10px] text-rose-700 dark:text-rose-300">
+              {realTimeCorruptedList.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center py-1 border-b border-rose-500/10 last:border-0">
+                  <span className="font-semibold truncate max-w-[350px]">{item.fileName}</span>
+                  <span className="opacity-75 italic text-right truncate max-w-[200px]">{item.errorReason}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -301,9 +515,27 @@ export function Dashboard() {
             eta={eta}
           />
 
+          {/* Ações rápidas do relatório */}
+          {results.length > 0 && !isProcessing && corruptedCount > 0 && (
+            <div className="flex flex-wrap gap-2.5 items-center bg-accent/25 border p-4 rounded-2xl">
+              <span className="text-xs text-muted-foreground font-semibold">
+                Ações Rápidas de Correção:
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyCorruptedDeleteCommand}
+                className="h-9 px-3 rounded-xl gap-1.5 text-xs font-semibold hover:border-rose-500/20 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copiar Comando de Exclusão (CMD)
+              </Button>
+            </div>
+          )}
+
           {/* Alerta de imagens ausentes na sequência */}
-          {missingSequences.length > 0 && (
-            <Card className="border border-amber-500/25 bg-amber-500/5 dark:bg-amber-950/10 backdrop-blur-md rounded-2xl">
+          {missingSequences.length > 0 && !isProcessing && (
+            <Card className="border border-amber-500/25 bg-amber-500/5 dark:bg-amber-950/10 backdrop-blur-md rounded-2xl animate-in fade-in-50 duration-300">
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
@@ -314,7 +546,7 @@ export function Dashboard() {
                       Imagens Ausentes na Sequência Numérica
                     </h3>
                     <p className="text-xs text-amber-700/80 dark:text-amber-500/80 leading-relaxed">
-                      Detectamos que os arquivos possuem sequências numéricas e que algumas imagens estão faltando na ordem.
+                      Detectamos que a pasta analisada possui sequências numéricas e que algumas imagens estão faltando na ordem.
                     </p>
                   </div>
                 </div>
@@ -335,7 +567,7 @@ export function Dashboard() {
                           <Badge 
                             key={fileIdx} 
                             variant="outline" 
-                            className="border-amber-500/20 bg-amber-500/5 text-amber-700 dark:text-amber-400 text-xs py-0.5 px-2 font-medium rounded-lg"
+                            className="border-amber-500/20 bg-amber-500/5 text-amber-700 dark:text-amber-400 text-xs py-0.5 px-2.5 font-medium rounded-lg"
                           >
                             {file}
                           </Badge>
@@ -350,15 +582,17 @@ export function Dashboard() {
 
           {/* Resultados Detalhados */}
           {results.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 pl-1">
-                <h2 className="text-lg font-bold tracking-tight">Relatório de Análise</h2>
-                {corruptedCount > 0 && (
-                  <Badge variant="outline" className="rounded-full gap-1 border-rose-500/25 bg-rose-500/5 text-rose-600 dark:text-rose-400 font-semibold text-[10px] px-2.5 py-0.5">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    {corruptedCount} falhas detectadas
-                  </Badge>
-                )}
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between pl-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold tracking-tight">Relatório de Análise</h2>
+                  {corruptedCount > 0 && (
+                    <Badge variant="outline" className="rounded-full gap-1 border-rose-500/25 bg-rose-500/5 text-rose-600 dark:text-rose-400 font-bold text-[10px] px-2.5 py-0.5">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      {corruptedCount} falhas
+                    </Badge>
+                  )}
+                </div>
               </div>
               <ImageList
                 results={results}

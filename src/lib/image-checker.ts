@@ -5,7 +5,8 @@ export interface ImageCheckResult {
   status: 'healthy' | 'corrupted';
   errorReason?: string;
   dimensions?: { width: number; height: number };
-  fileRef: File; // Referência ao arquivo para visualizações futuras no modal
+  durationMs: number; // Tempo de execução da análise
+  fileRef: File; // Referência ao arquivo para preview
 }
 
 function readBytesSlice(file: File, start: number, end: number): Promise<ArrayBuffer> {
@@ -30,27 +31,43 @@ function readAsTextSlice(file: File, start: number, end: number): Promise<string
 
 async function checkMagicBytes(file: File): Promise<{ isValid: boolean; detectedType?: string; errorReason?: string }> {
   try {
-    // Ler os primeiros 12 bytes
     const headerBuffer = await readBytesSlice(file, 0, 12);
     const headerArr = new Uint8Array(headerBuffer);
 
-    // Converter para hexadecimal para facilitar comparação de cabeçalhos longos
+    // Converter para hexadecimal para facilitar comparação
     const toHex = (arr: Uint8Array) => Array.from(arr).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
     const headerHex = toHex(headerArr);
 
-    // E os últimos 2 bytes (para verificar fim do JPEG)
     let footerArr: Uint8Array | null = null;
     if (file.size > 2) {
       const footerBuffer = await readBytesSlice(file, file.size - 2, file.size);
       footerArr = new Uint8Array(footerBuffer);
     }
 
+    // --- DETECÇÃO DE FORMATOS NÃO-IMAGEM (SPOOFING / RENOMEAÇÕES MALICIOSAS) ---
+    // 1. PDF: %PDF (25 50 44 46)
+    if (headerHex.startsWith('25 50 44 46')) {
+      return { isValid: false, detectedType: 'PDF', errorReason: 'O arquivo é na verdade um documento PDF (.pdf) renomeado' };
+    }
+    // 2. ZIP / Office moderno: PK (50 4B 03 04)
+    if (headerHex.startsWith('50 4B 03 04')) {
+      return { isValid: false, detectedType: 'ZIP/Office', errorReason: 'O arquivo é um arquivo compactado (.zip) ou documento de escritório (.docx/.xlsx) renomeado' };
+    }
+    // 3. EXE / DLL: MZ (4D 5A)
+    if (headerHex.startsWith('4D 5A')) {
+      return { isValid: false, detectedType: 'EXECUTÁVEL', errorReason: 'O arquivo é um programa executável (.exe/.dll) perigoso renomeado' };
+    }
+    // 4. RAR: Rar! (52 61 72 21 1A 07)
+    if (headerHex.startsWith('52 61 72 21 1A 07')) {
+      return { isValid: false, detectedType: 'RAR', errorReason: 'O arquivo é um arquivo compactado RAR (.rar) renomeado' };
+    }
+
+    // --- VALIDAÇÃO DE FORMATOS DE IMAGEM SUPORTADOS ---
     // 1. JPEG: FF D8 (Start of Image)
     if (headerArr[0] === 0xFF && headerArr[1] === 0xD8) {
-      // Opcional: checar se termina com FF D9 (End of Image)
-      // Se não terminar, pode estar corrompida ou truncada
+      // Checar marcador final FF D9 (End of Image)
       if (footerArr && (footerArr[0] !== 0xFF || footerArr[1] !== 0xD9)) {
-        return { isValid: false, detectedType: 'JPEG', errorReason: 'Imagem JPEG truncada (marcador final FF D9 ausente)' };
+        return { isValid: false, detectedType: 'JPEG', errorReason: 'Estrutura JPEG incompleta: arquivo truncado ou cortado no meio (falta o marcador FF D9)' };
       }
       return { isValid: true, detectedType: 'JPEG' };
     }
@@ -65,7 +82,7 @@ async function checkMagicBytes(file: File): Promise<{ isValid: boolean; detected
       return { isValid: true, detectedType: 'GIF' };
     }
 
-    // 4. WebP: RIFF (52 49 46 46) nos bytes 0-3 e WEBP (57 45 42 50) nos bytes 8-11
+    // 4. WebP: RIFF (52 49 46 46) e WEBP (57 45 42 50)
     const isWebP = headerArr[0] === 0x52 && headerArr[1] === 0x49 && headerArr[2] === 0x46 && headerArr[3] === 0x46 &&
                    headerArr[8] === 0x57 && headerArr[9] === 0x45 && headerArr[10] === 0x42 && headerArr[11] === 0x50;
     if (isWebP) {
@@ -78,7 +95,7 @@ async function checkMagicBytes(file: File): Promise<{ isValid: boolean; detected
       if (textSlice.toLowerCase().includes('<svg')) {
         return { isValid: true, detectedType: 'SVG' };
       }
-      return { isValid: false, detectedType: 'SVG', errorReason: 'Arquivo SVG inválido (tag <svg> não encontrada)' };
+      return { isValid: false, detectedType: 'SVG', errorReason: 'Arquivo XML/SVG malformado: tag de inicialização <svg> não encontrada' };
     }
 
     // 6. BMP: 42 4D (BM)
@@ -86,12 +103,13 @@ async function checkMagicBytes(file: File): Promise<{ isValid: boolean; detected
       return { isValid: true, detectedType: 'BMP' };
     }
 
-    return { isValid: false, errorReason: 'Assinatura mágica desconhecida ou formato não suportado' };
+    return { isValid: false, errorReason: `Assinatura binária desconhecida (${headerHex.slice(0, 11)}...). Provavelmente não é uma imagem.` };
   } catch (err) {
-    return { isValid: false, errorReason: 'Erro ao ler os cabeçalhos do arquivo: ' + (err as Error).message };
+    return { isValid: false, errorReason: 'Falha crítica ao ler a estrutura binária: ' + (err as Error).message };
   }
 }
 
+// Otimização ágil com decodificação de imagem assíncrona nativa
 export function checkImageLoading(file: File): Promise<{ isValid: boolean; errorReason?: string; dimensions?: { width: number; height: number } }> {
   return new Promise((resolve) => {
     const objectUrl = URL.createObjectURL(file);
@@ -100,44 +118,32 @@ export function checkImageLoading(file: File): Promise<{ isValid: boolean; error
     img.onload = () => {
       if (img.naturalWidth === 0 || img.naturalHeight === 0) {
         URL.revokeObjectURL(objectUrl);
-        resolve({ isValid: false, errorReason: 'Dimensões de imagem inválidas (0x0)' });
+        resolve({ isValid: false, errorReason: 'Cabeçalho lido, mas dimensões físicas da imagem são inválidas (0x0px)' });
         return;
       }
 
-      // Validar renderização via Canvas para capturar corrupções parciais
-      try {
-        const canvas = document.createElement('canvas');
-        const maxCanvasSize = 2048;
-        let width = img.naturalWidth;
-        let height = img.naturalHeight;
-        
-        if (width > maxCanvasSize || height > maxCanvasSize) {
-          const ratio = Math.min(maxCanvasSize / width, maxCanvasSize / height);
-          width = Math.round(width * ratio);
-          height = Math.round(height * ratio);
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
+      // img.decode() faz a decodificação da imagem nativamente em segundo plano sem usar canvas físico!
+      // É muito mais rápido, economiza RAM e aproveita aceleração de hardware.
+      img.decode()
+        .then(() => {
           URL.revokeObjectURL(objectUrl);
-          resolve({ isValid: true, dimensions: { width: img.naturalWidth, height: img.naturalHeight } });
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(objectUrl);
-        resolve({ isValid: true, dimensions: { width: img.naturalWidth, height: img.naturalHeight } });
-      } catch (err) {
-        URL.revokeObjectURL(objectUrl);
-        resolve({ isValid: false, errorReason: 'Falha na renderização de Canvas (imagem corrompida): ' + (err as Error).message });
-      }
+          resolve({ 
+            isValid: true, 
+            dimensions: { width: img.naturalWidth, height: img.naturalHeight } 
+          });
+        })
+        .catch((err) => {
+          URL.revokeObjectURL(objectUrl);
+          resolve({ 
+            isValid: false, 
+            errorReason: `Falha na decodificação de pixels (dados internos corrompidos): ${err.message || 'Dados inválidos'}` 
+          });
+        });
     };
 
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      resolve({ isValid: false, errorReason: 'Navegador falhou em decodificar a imagem' });
+      resolve({ isValid: false, errorReason: 'O decodificador do navegador rejeitou o arquivo (dados corrompidos ou extensão mentirosa)' });
     };
 
     img.src = objectUrl;
@@ -145,22 +151,26 @@ export function checkImageLoading(file: File): Promise<{ isValid: boolean; error
 }
 
 export async function checkImageFile(file: File): Promise<ImageCheckResult> {
+  const startTime = performance.now();
+  
   const result: ImageCheckResult = {
     fileName: file.name,
     fileSize: file.size,
     fileType: file.type || 'unknown',
     status: 'healthy',
+    durationMs: 0,
     fileRef: file,
   };
 
   if (file.size < 4) {
     result.status = 'corrupted';
-    result.errorReason = 'Arquivo vazio ou muito pequeno para ser uma imagem';
+    result.errorReason = 'Arquivo vazio ou menor do que 4 bytes (inviável para imagem)';
+    result.durationMs = Math.round(performance.now() - startTime);
     return result;
   }
 
   try {
-    // 1. Validar Magic Bytes
+    // 1. Validar assinatura binária do arquivo (Magic Bytes)
     const magicCheck = await checkMagicBytes(file);
     if (magicCheck.detectedType) {
       result.fileType = magicCheck.detectedType;
@@ -168,24 +178,27 @@ export async function checkImageFile(file: File): Promise<ImageCheckResult> {
 
     if (!magicCheck.isValid) {
       result.status = 'corrupted';
-      result.errorReason = magicCheck.errorReason || 'Assinatura binária de arquivo corrompida';
+      result.errorReason = magicCheck.errorReason || 'Assinatura binária de arquivo inválida';
+      result.durationMs = Math.round(performance.now() - startTime);
       return result;
     }
 
-    // 2. Validar carregamento no DOM + Renderização Canvas
+    // 2. Validar carregamento no DOM + Decodificação assíncrona
     const loadCheck = await checkImageLoading(file);
     if (!loadCheck.isValid) {
       result.status = 'corrupted';
       result.errorReason = loadCheck.errorReason || 'Falha de renderização ou decodificação';
+      result.durationMs = Math.round(performance.now() - startTime);
       return result;
     }
 
     result.dimensions = loadCheck.dimensions;
   } catch (err) {
     result.status = 'corrupted';
-    result.errorReason = 'Erro geral na análise: ' + (err as Error).message;
+    result.errorReason = 'Exceção geral de processamento: ' + (err as Error).message;
   }
 
+  result.durationMs = parseFloat((performance.now() - startTime).toFixed(1));
   return result;
 }
 
@@ -252,4 +265,58 @@ export function detectMissingSequences(fileNames: string[]): MissingSequenceResu
   }
 
   return results;
+}
+
+export async function repairJpegBytes(file: File): Promise<Blob> {
+  const originalBuffer = await file.arrayBuffer();
+  const originalArr = new Uint8Array(originalBuffer);
+  
+  // Criar novo array com tamanho original + 2 bytes para injetar FF D9
+  const repairedArr = new Uint8Array(originalArr.length + 2);
+  repairedArr.set(originalArr);
+  repairedArr[originalArr.length] = 0xFF;
+  repairedArr[originalArr.length + 1] = 0xD9;
+
+  return new Blob([repairedArr], { type: 'image/jpeg' });
+}
+
+export function repairImageViaCanvas(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('Não foi possível obter contexto de rasterização 2D.'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(objectUrl);
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Falha ao exportar pixels rasterizados do canvas.'));
+          }
+        }, 'image/png'); // Salva em PNG para manter máxima qualidade e integridade do bloco recuperado
+      } catch (err) {
+        URL.revokeObjectURL(objectUrl);
+        reject(err);
+      }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Decodificador gráfico rejeitou totalmente o arquivo de imagem.'));
+    };
+
+    img.src = objectUrl;
+  });
 }

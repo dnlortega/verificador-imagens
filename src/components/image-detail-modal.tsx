@@ -8,9 +8,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { ImageCheckResult } from '@/lib/image-checker';
+import { ImageCheckResult, repairJpegBytes, repairImageViaCanvas } from '@/lib/image-checker';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, FileImage, HardDrive, Maximize2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, CheckCircle, FileImage, HardDrive, Maximize2, Wrench, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ImageDetailModalProps {
   result: ImageCheckResult | null;
@@ -20,6 +22,7 @@ interface ImageDetailModalProps {
 
 export function ImageDetailModal({ result, isOpen, onClose }: ImageDetailModalProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isRepairing, setIsRepairing] = useState(false);
 
   useEffect(() => {
     if (!result || !isOpen) {
@@ -27,8 +30,6 @@ export function ImageDetailModal({ result, isOpen, onClose }: ImageDetailModalPr
       return;
     }
 
-    // Se a imagem for saudável (ou mesmo se for tentar exibir a corrompida para inspeção), criamos a URL
-    // Para SVG ou imagens parcialmente legíveis, o navegador pode tentar desenhar
     let objectUrl: string | null = null;
     try {
       objectUrl = URL.createObjectURL(result.fileRef);
@@ -54,11 +55,51 @@ export function ImageDetailModal({ result, isOpen, onClose }: ImageDetailModalPr
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const handleRepair = async () => {
+    if (!result) return;
+    setIsRepairing(true);
+    const toastId = toast.loading('Tentando reparar pixels e dados da imagem localmente...');
+    
+    try {
+      let repairedBlob: Blob;
+      let repairType = '';
+      
+      // Decidir tipo de reparo
+      if (result.fileType === 'JPEG' && result.errorReason?.toLowerCase().includes('truncada')) {
+        repairedBlob = await repairJpegBytes(result.fileRef);
+        repairType = 'Injeção de Fim de Imagem (FF D9)';
+      } else {
+        repairedBlob = await repairImageViaCanvas(result.fileRef);
+        repairType = 'Recuperação Raster do Canvas';
+      }
+      
+      // Criar download automático
+      const url = URL.createObjectURL(repairedBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      const ext = repairType.includes('Canvas') ? 'png' : 'jpg';
+      const baseName = result.fileName.substring(0, result.fileName.lastIndexOf('.')) || result.fileName;
+      link.setAttribute('download', `${baseName}-reparada.${ext}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Imagem reparada via: ${repairType}! Download iniciado.`, { id: toastId });
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error(`Falha no reparo: ${(err as Error).message}`, { id: toastId });
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
   const isHealthy = result.status === 'healthy';
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl w-11/12 rounded-2xl overflow-hidden p-6 gap-6 bg-background/95 backdrop-blur-md">
+      <DialogContent className="max-w-2xl w-11/12 rounded-2xl overflow-hidden p-6 gap-6 bg-background/95 backdrop-blur-md border">
         <DialogHeader className="pb-2 border-b">
           <DialogTitle className="flex items-center gap-3 text-lg font-bold truncate pr-6">
             <span className="truncate max-w-[400px]">{result.fileName}</span>
@@ -145,25 +186,43 @@ export function ImageDetailModal({ result, isOpen, onClose }: ImageDetailModalPr
               </div>
             </div>
 
-            {/* Caixa de Erro */}
-            {!isHealthy && result.errorReason && (
-              <div className="p-4 border border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300 rounded-xl space-y-1">
-                <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <AlertCircle className="h-4 w-4" /> Motivo da Falha:
-                </p>
-                <p className="text-sm font-medium leading-relaxed">
-                  {result.errorReason}
-                </p>
+            {/* Caixa de Erro + Opção de Correção */}
+            {!isHealthy ? (
+              <div className="space-y-3">
+                <div className="p-4 border border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300 rounded-xl space-y-1">
+                  <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4" /> Motivo da Falha:
+                  </p>
+                  <p className="text-sm font-medium leading-relaxed">
+                    {result.errorReason}
+                  </p>
+                </div>
+                
+                <Button
+                  onClick={handleRepair}
+                  disabled={isRepairing}
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white font-bold text-xs gap-2 shadow-md transition-all duration-300 hover:scale-[1.02] border-0"
+                >
+                  {isRepairing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Reparando Imagem...
+                    </>
+                  ) : (
+                    <>
+                      <Wrench className="h-4 w-4 animate-pulse" />
+                      Tentar Corrigir e Baixar
+                    </>
+                  )}
+                </Button>
               </div>
-            )}
-            
-            {isHealthy && (
+            ) : (
               <div className="p-4 border border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300 rounded-xl space-y-1">
                 <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <CheckCircle className="h-4 w-4" /> Integridade Confirmada
                 </p>
                 <p className="text-xs leading-relaxed opacity-90">
-                  O cabeçalho mágico foi validado com sucesso e a imagem foi renderizada completamente no Canvas sem erros de decodificação.
+                  O cabeçalho mágico foi validado com sucesso e a imagem foi decodificada sem erros estruturais de pixels em {result.durationMs}ms.
                 </p>
               </div>
             )}
