@@ -100,12 +100,12 @@ export function ImageDetailModal({ result, isOpen, onClose }: ImageDetailModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl w-11/12 rounded-3xl overflow-hidden p-0 gap-0 bg-background/80 backdrop-blur-2xl border-0 shadow-2xl ring-1 ring-white/10">
+      <DialogContent className="max-w-3xl w-[95vw] md:w-11/12 rounded-3xl overflow-hidden p-0 gap-0 bg-background/80 backdrop-blur-2xl border-0 shadow-2xl ring-1 ring-white/10 max-h-[95vh] overflow-y-auto">
         
         {/* Glow de fundo */}
         <div className={`absolute -top-40 -right-40 w-96 h-96 rounded-full blur-[100px] opacity-20 pointer-events-none ${isHealthy ? 'bg-emerald-500' : 'bg-rose-500'}`} />
 
-        <div className="p-8 pb-6 border-b border-white/5 relative z-10">
+        <div className="p-5 md:p-8 pb-4 md:pb-6 border-b border-white/5 relative z-10 sticky top-0 bg-background/50 backdrop-blur-md">
           <DialogTitle className="flex items-start justify-between gap-4">
             <div className="space-y-1 overflow-hidden">
               <h2 className="text-xl md:text-2xl font-bold truncate pr-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
@@ -133,10 +133,10 @@ export function ImageDetailModal({ result, isOpen, onClose }: ImageDetailModalPr
           </DialogTitle>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-[1fr_350px] p-8 pt-6 relative z-10">
+        <div className="grid gap-6 md:gap-8 md:grid-cols-[1fr_350px] p-5 md:p-8 pt-5 md:pt-6 relative z-10">
           
           {/* Coluna 1: Preview do Arquivo */}
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-black/40 shadow-inner border border-white/5 overflow-hidden aspect-square md:aspect-auto relative min-h-[300px] group">
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-black/40 shadow-inner border border-white/5 overflow-hidden aspect-square md:aspect-auto relative min-h-[250px] md:min-h-[300px] group">
             {isHealthy && imageUrl ? (
               isVideo ? (
                 <video

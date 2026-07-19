@@ -17,7 +17,21 @@ const fontSpaceMono = Space_Mono({
 
 export const metadata: Metadata = {
   title: "PixelArmor PRO | O Verificador Definitivo",
-  description: "Plataforma avançada para detecção e proteção contra imagens corrompidas e arquivos ausentes.",
+  description: "Plataforma avançada para detecção e proteção contra imagens e vídeos corrompidos.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "PixelArmor PRO",
+  },
+};
+
+export const viewport = {
+  themeColor: "#10b981",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

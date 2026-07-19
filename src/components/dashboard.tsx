@@ -395,16 +395,16 @@ export function Dashboard() {
   const realTimeCorruptedList = results.filter(r => r.status === 'corrupted');
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto px-4 py-10 relative z-10">
+    <div className="space-y-6 md:space-y-8 max-w-6xl mx-auto px-4 py-6 md:py-10 relative z-10">
       {/* Cabeçalho do App */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/10 pb-8 relative">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/10 pb-6 md:pb-8 relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent opacity-50 blur-xl -z-10"></div>
         <div>
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white shadow-lg shadow-primary/30">
-              <Sparkles className="h-6 w-6" />
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+            <div className="p-2 md:p-2.5 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white shadow-lg shadow-primary/30">
+              <Sparkles className="h-5 w-5 md:h-6 md:w-6" />
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent drop-shadow-sm">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent drop-shadow-sm">
               PixelArmor
             </h1>
             <Badge variant="outline" className="rounded-full gap-1 border-primary/30 bg-primary/10 text-primary text-[11px] px-3 py-0.5 font-bold shadow-sm backdrop-blur-md">
@@ -416,7 +416,7 @@ export function Dashboard() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end">
           <ThemeToggle />
           
           <Button
@@ -594,7 +594,7 @@ export function Dashboard() {
                   <Cpu className="h-4.5 w-4.5 text-primary animate-spin" />
                   Analisando: <span className="text-primary truncate max-w-[320px] font-mono font-semibold">{currentFileChecking}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   Processando {processedCount} de {totalFiles} imagens...
                 </p>
               </div>
