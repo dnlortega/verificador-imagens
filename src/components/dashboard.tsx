@@ -162,7 +162,17 @@ export function Dashboard() {
     let localHealthy = 0;
     let localCorrupted = 0;
 
-    const processNext = async (): Promise<void> => {
+    const workerPool: Worker[] = [];
+    try {
+      const numWorkers = Math.min(concurrency, files.length, 16);
+      for (let i = 0; i < numWorkers; i++) {
+        workerPool.push(new Worker(new URL('../lib/worker.ts', import.meta.url)));
+      }
+    } catch(e) {
+      console.warn("Workers not supported, using fallback", e);
+    }
+
+    const processNext = async (workerIndex: number): Promise<void> => {
       if (cancelRef.current || nextIndex >= files.length) {
         return;
       }
@@ -173,7 +183,26 @@ export function Dashboard() {
       setCurrentFileChecking(file.name);
 
       try {
-        const result = await checkImageFile(file);
+        let result: ImageCheckResult;
+        if (workerPool.length > 0) {
+          const worker = workerPool[workerIndex];
+          result = await new Promise((resolve, reject) => {
+            worker.onmessage = (e) => {
+              if (e.data.type === 'SUCCESS') {
+                const res = e.data.result;
+                res.fileRef = file;
+                resolve(res);
+              } else {
+                reject(new Error(e.data.error));
+              }
+            };
+            worker.onerror = (e) => reject(e);
+            worker.postMessage({ file, index: currentIndex });
+          });
+        } else {
+          result = await checkImageFile(file);
+        }
+        
         resultsBuffer.push(result);
         
         // Atualizar resultados em tempo real para o usuário ver os dados surgindo de forma ágil
@@ -206,19 +235,22 @@ export function Dashboard() {
       } finally {
         activeWorkers--;
         if (nextIndex < files.length && !cancelRef.current) {
-          await processNext();
+          await processNext(workerIndex);
         }
       }
     };
 
-    // Inicializar os workers baseados no slider de concorrência
+    // Inicializar os workers
     const initialWorkers: Promise<void>[] = [];
     const limit = Math.min(concurrency, files.length);
     for (let i = 0; i < limit; i++) {
-      initialWorkers.push(processNext());
+      initialWorkers.push(processNext(i % (workerPool.length || 1)));
     }
 
     await Promise.all(initialWorkers);
+    
+    // Terminar os workers e limpar memória
+    workerPool.forEach(w => w.terminate());
 
     setIsProcessing(false);
     setCurrentFileChecking('');
@@ -272,6 +304,37 @@ export function Dashboard() {
     const command = `del /F /Q ${corruptedFiles.map(r => `"${r.fileName}"`).join(' ')}`;
     navigator.clipboard.writeText(command);
     toast.success('Comando CMD (del) copiado com sucesso! Cole no terminal.');
+  };
+
+  const downloadDeleteScript = (os: 'win' | 'mac') => {
+    const corruptedFiles = results.filter(r => r.status === 'corrupted');
+    if (corruptedFiles.length === 0) return;
+
+    let content = '';
+    let filename = '';
+    
+    if (os === 'win') {
+      content = `@echo off\nREM PixelArmor Cleaner Script\n\n`;
+      content += corruptedFiles.map(r => `del /F /Q "${r.fileName}"`).join('\n');
+      content += `\n\necho.\necho Limpeza de imagens corrompidas concluída.\npause`;
+      filename = 'pixelarmor-clean.bat';
+    } else {
+      content = `#!/bin/bash\n# PixelArmor Cleaner Script\n\n`;
+      content += corruptedFiles.map(r => `rm -f "${r.fileName}"`).join('\n');
+      content += `\n\necho "Limpeza de imagens corrompidas concluída."\n`;
+      filename = 'pixelarmor-clean.sh';
+    }
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Script de exclusão (${os}) exportado com sucesso!`);
   };
 
   const handleExport = (format: 'csv' | 'json') => {
@@ -602,6 +665,27 @@ export function Dashboard() {
                 title="Copiar Comando de Exclusão (CMD)"
               >
                 <Copy className="h-4 w-4" />
+              </Button>
+
+              <div className="h-6 w-px bg-border/50 mx-1"></div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadDeleteScript('win')}
+                className="rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all font-mono text-xs border-primary/20"
+                title="Baixar Script .bat para Windows"
+              >
+                .BAT (Win)
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadDeleteScript('mac')}
+                className="rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all font-mono text-xs border-primary/20"
+                title="Baixar Script .sh para Mac/Linux"
+              >
+                .SH (Mac)
               </Button>
             </div>
           )}

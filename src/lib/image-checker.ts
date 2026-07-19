@@ -109,24 +109,22 @@ async function checkMagicBytes(file: File): Promise<{ isValid: boolean; detected
   }
 }
 
-function checkCanvasPixelsForTruncation(img: HTMLImageElement): boolean {
+function checkCanvasPixelsForTruncation(img: ImageBitmap): boolean {
   try {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
+    const canvas = new OffscreenCanvas(img.width, img.height);
+    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
     if (!ctx) return false;
 
     ctx.drawImage(img, 0, 0);
 
     // Amostra 1: Linha de pixels horizontal a 95% da altura
-    const sampleHeight1 = Math.floor(img.naturalHeight * 0.95);
+    const sampleHeight1 = Math.floor(img.height * 0.95);
     // Amostra 2: Linha de pixels final (altura - 1)
-    const sampleHeight2 = img.naturalHeight - 1;
+    const sampleHeight2 = img.height - 1;
 
     const getLineInfo = (y: number): { isUniform: boolean; r: number; g: number; b: number; a: number } => {
-      if (y <= 0 || y >= img.naturalHeight) return { isUniform: false, r: 0, g: 0, b: 0, a: 0 };
-      const imageData = ctx.getImageData(0, y, img.naturalWidth, 1);
+      if (y <= 0 || y >= img.height) return { isUniform: false, r: 0, g: 0, b: 0, a: 0 };
+      const imageData = ctx.getImageData(0, y, img.width, 1);
       const data = imageData.data;
 
       const r = data[0];
@@ -157,7 +155,7 @@ function checkCanvasPixelsForTruncation(img: HTMLImageElement): boolean {
         (line2.isUniform && isFailureColor(line2.r, line2.g, line2.b, line2.a))) {
       
       // Checamos a linha de cima (ex: a 10% da altura)
-      const sampleTop = Math.floor(img.naturalHeight * 0.1);
+      const sampleTop = Math.floor(img.height * 0.1);
       const topInfo = getLineInfo(sampleTop);
       
       // Se a linha de cima também for uniforme e tiver EXATAMENTE a mesma cor de falha da linha de baixo,
@@ -180,54 +178,31 @@ function checkCanvasPixelsForTruncation(img: HTMLImageElement): boolean {
   return false;
 }
 
-// Otimização ágil com decodificação de imagem assíncrona nativa
-export function checkImageLoading(file: File): Promise<{ isValid: boolean; errorReason?: string; dimensions?: { width: number; height: number } }> {
-  return new Promise((resolve) => {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
+// Otimização ágil com decodificação de imagem assíncrona nativa suportada em Web Workers
+export async function checkImageLoading(file: File): Promise<{ isValid: boolean; errorReason?: string; dimensions?: { width: number; height: number } }> {
+  try {
+    const imgBitmap = await createImageBitmap(file);
 
-    img.onload = () => {
-      if (img.naturalWidth === 0 || img.naturalHeight === 0) {
-        URL.revokeObjectURL(objectUrl);
-        resolve({ isValid: false, errorReason: 'Cabeçalho lido, mas dimensões físicas da imagem são inválidas (0x0px)' });
-        return;
-      }
+    if (imgBitmap.width === 0 || imgBitmap.height === 0) {
+      imgBitmap.close();
+      return { isValid: false, errorReason: 'Cabeçalho lido, mas dimensões físicas da imagem são inválidas (0x0px)' };
+    }
 
-      // img.decode() faz a decodificação da imagem nativamente em segundo plano sem usar canvas físico!
-      img.decode()
-        .then(() => {
-          // Validação avançada de pixels na parte inferior para pegar imagens cortadas
-          const isTruncated = checkCanvasPixelsForTruncation(img);
-          URL.revokeObjectURL(objectUrl);
-          
-          if (isTruncated) {
-            resolve({
-              isValid: false,
-              errorReason: 'Imagem incompleta/truncada: detectado preenchimento cinza sólido ou pixels inválidos na metade inferior'
-            });
-          } else {
-            resolve({ 
-              isValid: true, 
-              dimensions: { width: img.naturalWidth, height: img.naturalHeight } 
-            });
-          }
-        })
-        .catch((err) => {
-          URL.revokeObjectURL(objectUrl);
-          resolve({ 
-            isValid: false, 
-            errorReason: `Falha na decodificação de pixels (dados internos corrompidos): ${err.message || 'Dados inválidos'}` 
-          });
-        });
-    };
+    const isTruncated = checkCanvasPixelsForTruncation(imgBitmap);
+    const dimensions = { width: imgBitmap.width, height: imgBitmap.height };
+    imgBitmap.close();
 
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve({ isValid: false, errorReason: 'O decodificador do navegador rejeitou o arquivo (dados corrompidos ou extensão mentirosa)' });
-    };
-
-    img.src = objectUrl;
-  });
+    if (isTruncated) {
+      return {
+        isValid: false,
+        errorReason: 'Imagem incompleta/truncada: detectado preenchimento cinza sólido ou pixels inválidos na metade inferior'
+      };
+    } else {
+      return { isValid: true, dimensions };
+    }
+  } catch (err: any) {
+    return { isValid: false, errorReason: `Falha na decodificação de pixels ou rejeitado pelo decodificador do navegador: ${err.message || 'Dados inválidos'}` };
+  }
 }
 
 export async function checkImageFile(file: File): Promise<ImageCheckResult> {
