@@ -48,7 +48,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
 
   // Filtrar e pesquisar resultados
   const filteredResults = useMemo(() => {
-    return results.filter((item) => {
+    const list = results.filter((item) => {
       const matchesFilter =
         filter === 'all' ||
         (filter === 'healthy' && item.status === 'healthy') ||
@@ -60,6 +60,8 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
 
       return matchesFilter && matchesSearch;
     });
+
+    return list.sort((a, b) => a.fileName.localeCompare(b.fileName, undefined, { numeric: true, sensitivity: 'base' }));
   }, [results, filter, searchQuery]);
 
   // Separar itens para a galeria

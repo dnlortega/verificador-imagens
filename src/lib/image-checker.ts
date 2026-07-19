@@ -338,16 +338,89 @@ export async function repairJpegBytes(file: File): Promise<Blob> {
   return new Blob([repairedArr], { type: 'image/jpeg' });
 }
 
+async function detectHealthyHeight(img: HTMLImageElement): Promise<number> {
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return img.naturalHeight;
+
+  ctx.drawImage(img, 0, 0);
+
+  const width = img.naturalWidth;
+  const height = img.naturalHeight;
+  
+  // Vamos ler a metade inferior (a partir dos 40% da altura) de uma vez
+  const startY = Math.floor(height * 0.4);
+  const scanHeight = height - startY;
+  if (scanHeight <= 0) return height;
+
+  let imageData;
+  try {
+    imageData = ctx.getImageData(0, startY, width, scanHeight);
+  } catch (e) {
+    console.error('Falha de segurança/CORS no getImageData de reparo:', e);
+    return height;
+  }
+  
+  const data = imageData.data;
+  const rowBytes = width * 4;
+  let healthyRowIndex = scanHeight - 1;
+
+  // Lemos as linhas de baixo para cima
+  for (let r = scanHeight - 1; r >= 0; r--) {
+    const rowStart = r * rowBytes;
+    const firstR = data[rowStart];
+    const firstG = data[rowStart + 1];
+    const firstB = data[rowStart + 2];
+    const firstA = data[rowStart + 3];
+
+    let isUniform = true;
+    for (let c = 1; c < width; c++) {
+      const pixelStart = rowStart + c * 4;
+      if (
+        data[pixelStart] !== firstR ||
+        data[pixelStart + 1] !== firstG ||
+        data[pixelStart + 2] !== firstB ||
+        data[pixelStart + 3] !== firstA
+      ) {
+        isUniform = false;
+        break;
+      }
+    }
+
+    if (isUniform) {
+      const isGray = (firstR >= 120 && firstR <= 136) && (firstG >= 120 && firstG <= 136) && (firstB >= 120 && firstB <= 136);
+      const isBlack = firstR === 0 && firstG === 0 && firstB === 0;
+      const isTransparent = firstA === 0;
+
+      if (isGray || isBlack || isTransparent) {
+        continue; // Linha corrompida detectada, continua subindo
+      }
+    }
+
+    // Encontramos pixels de foto válidos (ruído/variação de cor)
+    healthyRowIndex = r;
+    break;
+  }
+
+  const healthyHeight = startY + healthyRowIndex + 1;
+  return Math.max(10, Math.min(healthyHeight, height));
+}
+
 export function repairImageViaCanvas(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
 
-    img.onload = () => {
+    img.onload = async () => {
       try {
+        const healthyHeight = await detectHealthyHeight(img);
+        
         const canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        canvas.height = healthyHeight; // Corta a barra cinza inferior
+        
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           URL.revokeObjectURL(objectUrl);
@@ -363,7 +436,7 @@ export function repairImageViaCanvas(file: File): Promise<Blob> {
           } else {
             reject(new Error('Falha ao exportar pixels rasterizados do canvas.'));
           }
-        }, 'image/png'); // Salva em PNG para manter máxima qualidade e integridade do bloco recuperado
+        }, 'image/png');
       } catch (err) {
         URL.revokeObjectURL(objectUrl);
         reject(err);
