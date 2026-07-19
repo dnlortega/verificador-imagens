@@ -396,19 +396,15 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 md:space-y-8 max-w-6xl mx-auto px-4 py-6 md:py-10 relative z-10">
-      {/* Cabeçalho do App */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/10 pb-6 md:pb-8 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent opacity-50 blur-xl -z-10"></div>
+      {/* Cabeçalho do App Minimalista */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b pb-6 relative">
         <div>
-          <div className="flex flex-wrap items-center gap-3 md:gap-4">
-            <div className="p-2 md:p-2.5 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white shadow-lg shadow-primary/30">
-              <Sparkles className="h-5 w-5 md:h-6 md:w-6" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent drop-shadow-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
               PixelArmor
             </h1>
-            <Badge variant="outline" className="rounded-full gap-1 border-primary/30 bg-primary/10 text-primary text-[11px] px-3 py-0.5 font-bold shadow-sm backdrop-blur-md">
-              Ultra-Ágil
+            <Badge variant="outline" className="rounded-md font-mono text-[10px] uppercase text-muted-foreground">
+              V2
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-3 leading-relaxed max-w-2xl font-medium">
@@ -515,60 +511,51 @@ export function Dashboard() {
 
       {/* Historico de Analises */}
       {showHistory && (
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl relative overflow-hidden rounded-[2rem] animate-in fade-in-50 slide-in-from-top-4 duration-300">
-          <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent opacity-50" />
-          <CardContent className="p-8 space-y-6 relative z-10">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold flex items-center gap-3 tracking-tight text-foreground/90">
-                <History className="h-5 w-5 text-indigo-400" />
+        <Card className="border border-border bg-transparent shadow-none rounded-xl overflow-hidden">
+          <CardContent className="p-6 space-y-6">
+            <div className="flex items-center justify-between border-b pb-4">
+              <h2 className="text-lg font-medium tracking-tight text-foreground">
                 Histórico de Processamento
               </h2>
               {analysisHistory.length > 0 && (
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   size="sm" 
                   onClick={() => {
                     setAnalysisHistory([]);
                     localStorage.removeItem('pixelarmor_history');
                   }}
-                  className="rounded-xl border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 font-semibold"
+                  className="text-muted-foreground hover:text-foreground"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Limpar Todos
+                  Limpar
                 </Button>
               )}
             </div>
             
             {showHistoryList && (
               analysisHistory.length === 0 ? (
-                <div className="text-center py-12 px-4 rounded-2xl bg-white/5 border border-white/5 border-dashed">
-                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                    <History className="h-8 w-8 text-muted-foreground/40" />
-                  </div>
-                  <p className="text-muted-foreground font-medium">Nenhum registro de análise encontrado no dispositivo local.</p>
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  Nenhum registro encontrado.
                 </div>
               ) : (
-                <div className="grid gap-4 pt-4 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-500 slide-in-from-bottom-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {analysisHistory.map((item) => (
-                    <div key={item.id} className="p-5 rounded-2xl border border-white/5 bg-accent/20 hover:bg-accent/40 hover:border-white/10 transition-all duration-300 space-y-4 group">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
-                        <span className="flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
-                          <Calendar className="h-4 w-4" />
-                          {item.date}
-                        </span>
+                    <div key={item.id} className="p-4 rounded-lg border border-border bg-card space-y-3">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>{item.date}</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="p-2 bg-background/50 rounded-xl border border-white/5">
-                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mb-1">Total</p>
-                          <p className="text-lg font-black">{item.total}</p>
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div>
+                          <p className="text-muted-foreground mb-1">Total</p>
+                          <p className="font-semibold text-foreground">{item.total}</p>
                         </div>
-                        <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl border border-emerald-500/20 shadow-inner">
-                          <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest mb-1">Bons</p>
-                          <p className="text-lg font-black">{item.healthy}</p>
+                        <div>
+                          <p className="text-muted-foreground mb-1">Bons</p>
+                          <p className="font-semibold text-emerald-500">{item.healthy}</p>
                         </div>
-                        <div className="p-2 bg-rose-500/10 text-rose-500 rounded-xl border border-rose-500/20 shadow-inner">
-                          <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest mb-1">Falhas</p>
-                          <p className="text-lg font-black">{item.corrupted}</p>
+                        <div>
+                          <p className="text-muted-foreground mb-1">Falhas</p>
+                          <p className="font-semibold text-rose-500">{item.corrupted}</p>
                         </div>
                       </div>
                     </div>
@@ -585,16 +572,16 @@ export function Dashboard() {
 
       {/* Progress & Cancel Panel */}
       {isProcessing && (
-        <Card className="border border-primary/15 bg-primary/5/15 backdrop-blur-md overflow-hidden relative rounded-2xl animate-pulse">
+        <Card className="border border-border bg-card shadow-sm rounded-xl">
           <CardContent className="p-6 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-bold flex items-center gap-2">
-                  <Cpu className="h-4.5 w-4.5 text-primary animate-spin" />
-                  Analisando: <span className="text-primary truncate max-w-[320px] font-mono font-semibold">{currentFileChecking}</span>
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Cpu className="h-4 w-4 text-muted-foreground animate-spin" />
+                  <span className="truncate max-w-[320px] font-mono">{currentFileChecking}</span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Processando {processedCount} de {totalFiles} imagens...
+                  Processando {processedCount} de {totalFiles}
                 </p>
               </div>
               <Button

@@ -107,44 +107,37 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
       <div className={`absolute -inset-1 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-1000 z-0 bg-gradient-to-r from-emerald-500 via-indigo-500 to-emerald-500 bg-[length:200%_auto] animate-[gradient_4s_linear_infinite] ${isDragActive ? 'opacity-100 scale-105' : ''}`} />
 
       <Card
-        className={`relative z-10 flex flex-col items-center justify-center p-12 md:p-16 border-[1.5px] border-dashed rounded-[2rem] transition-all duration-700 min-h-[350px] text-center cursor-pointer select-none overflow-hidden bg-background/60 backdrop-blur-3xl shadow-2xl
+        className={`relative z-10 flex flex-col items-center justify-center p-10 md:p-14 border border-dashed rounded-2xl transition-colors duration-300 min-h-[300px] text-center select-none bg-transparent shadow-none
           ${isDragActive 
-            ? 'border-emerald-500 bg-emerald-500/5 scale-[1.02] shadow-[0_0_80px_-15px_rgba(16,185,129,0.3)]' 
-            : 'border-white/10 hover:border-emerald-500/40 hover:bg-white/5 dark:hover:bg-white/5 shadow-black/20'
+            ? 'border-primary bg-accent/30' 
+            : 'border-border hover:border-muted-foreground/50'
           }
-          ${isProcessing ? 'opacity-50 cursor-not-allowed grayscale-[0.8] blur-[2px]' : ''}
+          ${isProcessing ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
         `}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
         onDragLeave={handleDrag}
         onDrop={handleDrop}
       >
-        {/* Subtle grid pattern background */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-50" />
-
-        <div className="flex flex-col items-center space-y-8 max-w-lg relative z-20">
+        <div className="flex flex-col items-center space-y-6 max-w-sm relative z-20">
           
-          {/* Animated Icon Ring */}
-          <div className="relative">
-            <div className={`absolute inset-0 rounded-full transition-transform duration-700 ${isDragActive ? 'scale-150 bg-emerald-500/20 animate-ping' : 'scale-100 bg-emerald-500/0'}`} />
-            <div className={`p-5 rounded-3xl transition-all duration-700 relative z-10 backdrop-blur-md border border-white/10 shadow-xl
-              ${isDragActive ? 'bg-emerald-500 text-white shadow-emerald-500/40 translate-y-[-10px]' : 'bg-background text-emerald-500 group-hover:shadow-emerald-500/20'}`}>
-              <Upload className={`w-10 h-10 transition-transform duration-700 ${isDragActive ? 'animate-bounce' : 'group-hover:-translate-y-1'}`} />
-            </div>
+          {/* Ícone Simples */}
+          <div className="p-4 rounded-full bg-accent text-muted-foreground">
+            <Upload className="w-8 h-8" />
           </div>
           
-          <div className="space-y-4">
-            <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground via-foreground to-muted-foreground transition-all duration-300">
-              {isDragActive ? 'Solte para Iniciar Análise' : 'Arraste Arquivos ou Pastas'}
+          <div className="space-y-2">
+            <h3 className="text-xl font-medium tracking-tight text-foreground">
+              Selecione ou Arraste
             </h3>
-            <p className="text-sm md:text-base text-muted-foreground/80 leading-relaxed font-medium px-4 max-w-sm mx-auto">
-              Processamento paralelo via WebWorkers para detecção instantânea na sua própria máquina.
+            <p className="text-sm text-muted-foreground">
+              Arquivos de mídia ou pastas inteiras.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4 w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 w-full" onClick={(e) => e.stopPropagation()}>
             {/* Botão de Arquivos */}
-            <div className="relative flex-1 min-w-[160px] h-14 group/btn">
+            <div className="relative flex-1 w-full sm:min-w-[140px] h-10 group/btn">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -155,17 +148,17 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
               />
               <Button 
                 variant="outline" 
-                size="lg" 
+                size="sm" 
                 disabled={isProcessing}
-                className={`w-full h-full rounded-2xl transition-all duration-500 border-white/10 bg-background/50 backdrop-blur-md group-hover/btn:bg-emerald-500/10 group-hover/btn:border-emerald-500/30 group-hover/btn:text-emerald-500 shadow-sm ${isProcessing ? 'opacity-50' : ''}`}
+                className="w-full h-full font-normal shadow-none border-border"
               >
-                <ImageIcon className="h-5 w-5 mr-3 transition-transform group-hover/btn:scale-110" />
+                <ImageIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                 Arquivos
               </Button>
             </div>
             
             {/* Botão de Pasta */}
-            <div className="relative flex-1 min-w-[160px] h-14 group/btn">
+            <div className="relative flex-1 w-full sm:min-w-[140px] h-10 group/btn">
               <input
                 type="file"
                 ref={folderInputRef}
@@ -176,20 +169,18 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
               />
               <Button 
                 variant="outline" 
-                size="lg" 
+                size="sm" 
                 disabled={isProcessing}
-                className={`w-full h-full rounded-2xl transition-all duration-500 border-white/10 bg-background/50 backdrop-blur-md group-hover/btn:bg-indigo-500/10 group-hover/btn:border-indigo-500/30 group-hover/btn:text-indigo-400 shadow-sm ${isProcessing ? 'opacity-50' : ''}`}
+                className="w-full h-full font-normal shadow-none border-border"
               >
-                <FolderOpen className="h-5 w-5 mr-3 transition-transform group-hover/btn:scale-110" />
-                Pasta Inteira
+                <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
+                Pastas
               </Button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-6 text-[11px] font-bold tracking-widest text-muted-foreground/50 uppercase">
-            <span className="w-12 h-px bg-white/10" />
-            Formatos: JPG, PNG, MP4, MOV (Até 4GB)
-            <span className="w-12 h-px bg-white/10" />
+          <div className="text-[11px] text-muted-foreground/60 pt-4">
+            Formatos suportados: JPG, PNG, GIF, BMP, SVG, MP4, MOV
           </div>
         </div>
       </Card>
