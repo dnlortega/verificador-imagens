@@ -5,7 +5,7 @@ import { UploadZone } from '@/components/upload-zone';
 import { StatsCards } from '@/components/stats-cards';
 import { ImageList } from '@/components/image-list';
 import { ImageDetailModal } from '@/components/image-detail-modal';
-import { checkImageFile, ImageCheckResult, detectMissingSequences, MissingSequenceResult } from '@/lib/image-checker';
+import { checkMediaFile, ImageCheckResult, detectMissingSequences, MissingSequenceResult } from '@/lib/image-checker';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -201,7 +201,7 @@ export function Dashboard() {
             worker.postMessage({ file, index: currentIndex });
           });
         } else {
-          result = await checkImageFile(file);
+          result = await checkMediaFile(file);
         }
         
         resultsBuffer.push(result);

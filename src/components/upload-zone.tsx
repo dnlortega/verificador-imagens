@@ -20,23 +20,23 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
     if (!fileList || fileList.length === 0) return;
     
     const filesArray = Array.from(fileList);
-    // Filtrar apenas arquivos de imagem comuns ou pela extensão
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
-    const imageFiles = filesArray.filter(file => {
+    // Filtrar apenas arquivos de imagem/vídeo comuns ou pela extensão
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.mp4', '.mov'];
+    const validFiles = filesArray.filter(file => {
       const name = file.name.toLowerCase();
-      return file.type.startsWith('image/') || imageExtensions.some(ext => name.endsWith(ext));
+      return file.type.startsWith('image/') || file.type.startsWith('video/') || allowedExtensions.some(ext => name.endsWith(ext));
     });
 
-    if (imageFiles.length === 0) {
-      toast.error('Nenhuma imagem válida foi encontrada nos arquivos selecionados.');
+    if (validFiles.length === 0) {
+      toast.error('Nenhum arquivo de imagem ou vídeo válido foi encontrado.');
       return;
     }
 
-    if (imageFiles.length < filesArray.length) {
-      toast.info(`Selecionados ${imageFiles.length} imagens de ${filesArray.length} arquivos totais.`);
+    if (validFiles.length < filesArray.length) {
+      toast.info(`Selecionados ${validFiles.length} arquivos válidos de ${filesArray.length} totais.`);
     }
 
-    onFilesSelected(imageFiles);
+    onFilesSelected(validFiles);
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -89,7 +89,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
         ref={fileInputRef}
         className="hidden"
         multiple
-        accept="image/*,.bmp"
+        accept="image/*,video/mp4,video/quicktime,.bmp,.mp4,.mov"
         onChange={handleFileChange}
       />
       <input
@@ -131,7 +131,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
               Arraste e solte seus arquivos aqui
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed px-4">
-              Arraste imagens individuais ou uma <strong className="text-foreground font-medium">pasta inteira</strong> para verificação instantânea na nuvem.
+              Arraste fotos e vídeos individuais ou uma <strong className="text-foreground font-medium">pasta inteira</strong> para verificação instantânea na nuvem.
             </p>
           </div>
 
@@ -145,7 +145,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
               title="Selecionar Imagens"
             >
               <ImageIcon className="h-5 w-5 mr-2" />
-              Imagens
+              Arquivos
             </Button>
             
             <Button 
@@ -162,7 +162,7 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
           </div>
 
           <div className="text-xs text-muted-foreground/60 pt-6 font-medium">
-            Formatos: JPEG, PNG, WEBP, GIF, BMP, SVG (Max: 200MB/arquivo)
+            Formatos: JPEG, PNG, MP4, MOV, GIF, BMP, SVG (Max: 4GB/arquivo)
           </div>
         </div>
       </Card>
