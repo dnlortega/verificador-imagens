@@ -149,13 +149,20 @@ export function Dashboard() {
     setHealthyCount(0);
     setCorruptedCount(0);
     setProgress(0);
-    setResults([]);
+    const initialResults: ImageCheckResult[] = files.map(file => ({
+      fileName: file.name,
+      fileRef: file,
+      status: 'pending',
+      fileType: file.type || 'DESCONHECIDO',
+      fileSize: file.size,
+      durationMs: 0
+    }));
+    setResults(initialResults);
     setMissingSequences([]);
     
     startTimeRef.current = Date.now();
     toast.success(`Iniciando análise ágil de ${files.length} imagens...`);
 
-    const resultsBuffer: ImageCheckResult[] = [];
     let activeWorkers = 0;
     let nextIndex = 0;
     
@@ -204,10 +211,12 @@ export function Dashboard() {
           result = await checkMediaFile(file);
         }
         
-        resultsBuffer.push(result);
-        
-        // Atualizar resultados em tempo real para o usuário ver os dados surgindo de forma ágil
-        setResults(prev => [...prev, result]);
+        // Atualizar o resultado específico na array para o usuário ver carregando um por um
+        setResults(prev => {
+          const newArray = [...prev];
+          newArray[currentIndex] = result;
+          return newArray;
+        });
 
         localProcessed++;
         if (result.status === 'healthy') {

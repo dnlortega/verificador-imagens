@@ -2,7 +2,7 @@ export interface ImageCheckResult {
   fileName: string;
   fileSize: number;
   fileType: string;
-  status: 'healthy' | 'corrupted';
+  status: 'healthy' | 'corrupted' | 'pending';
   errorReason?: string;
   dimensions?: { width: number; height: number };
   durationMs: number; // Tempo de execução da análise

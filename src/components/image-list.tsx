@@ -54,7 +54,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
     const list = results.filter((item) => {
       const matchesFilter =
         filter === 'all' ||
-        (filter === 'healthy' && item.status === 'healthy') ||
+        (filter === 'healthy' && (item.status === 'healthy' || item.status === 'pending')) ||
         (filter === 'corrupted' && item.status === 'corrupted');
       
       const matchesSearch = item.fileName
@@ -69,7 +69,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
 
   // Separar itens para a galeria
   const healthyItems = useMemo(() => {
-    return filteredResults.filter(r => r.status === 'healthy');
+    return filteredResults.filter(r => r.status === 'healthy' || r.status === 'pending');
   }, [filteredResults]);
 
   const corruptedItems = useMemo(() => {
@@ -96,7 +96,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
     
     // Gerar URLs apenas para itens saudáveis visíveis nesta página
     paginatedResults.forEach((item) => {
-      if (item.status === 'healthy') {
+      if (item.status === 'healthy' || item.status === 'pending') {
         try {
           urls[item.fileName] = URL.createObjectURL(item.fileRef);
         } catch (e) {
@@ -240,7 +240,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                       {/* Miniatura */}
                       <TableCell className="p-3">
                         <div className="h-10 w-10 rounded-lg border bg-accent/40 overflow-hidden flex items-center justify-center relative shrink-0">
-                          {isHealthy && thumbnailSrc ? (
+                          {(isHealthy || item.status === 'pending') && thumbnailSrc ? (
                             <div className="relative w-full h-full">
                               <div className="absolute inset-0 bg-muted animate-pulse" />
                               <img 
@@ -252,6 +252,11 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                                   e.currentTarget.classList.remove('opacity-0');
                                 }}
                               />
+                              {item.status === 'pending' && (
+                                <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                                  <Clock className="h-4 w-4 text-foreground animate-pulse" />
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <AlertCircle className="h-5 w-5 text-rose-500/80" />
@@ -282,18 +287,21 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                       {/* Status */}
                       <TableCell>
                         <Badge 
-                          variant={isHealthy ? 'default' : 'destructive'}
+                          variant={item.status === 'pending' ? 'outline' : isHealthy ? 'default' : 'destructive'}
                           className={`rounded-lg py-0.5 px-2.5 font-bold text-xs gap-1 border-0
-                            ${isHealthy ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'}
+                            ${item.status === 'pending' ? 'bg-muted text-muted-foreground animate-pulse' :
+                              isHealthy ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'}
                           `}
                         >
-                          {isHealthy ? 'Saudável' : 'Corrompida'}
+                          {item.status === 'pending' ? 'Analisando...' : isHealthy ? 'Saudável' : 'Corrompida'}
                         </Badge>
                       </TableCell>
                       
                       {/* Detalhe/Erro */}
                       <TableCell className="max-w-[240px] truncate text-xs font-semibold">
-                        {isHealthy ? (
+                        {item.status === 'pending' ? (
+                          <span className="text-muted-foreground">Aguardando...</span>
+                        ) : isHealthy ? (
                           <span className="text-muted-foreground font-normal">
                             {item.dimensions ? `${item.dimensions.width}x${item.dimensions.height} px` : 'OK'}
                           </span>
@@ -420,8 +428,8 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
             </div>
           )}
 
-          {/* Seção 2: Fotos Íntegras (Saudáveis) */}
-          {paginatedResults.some(r => r.status === 'healthy') && (filter === 'all' || filter === 'healthy') && (
+          {/* Seção 2: Fotos Íntegras (Saudáveis) e Pendentes */}
+          {paginatedResults.some(r => r.status === 'healthy' || r.status === 'pending') && (filter === 'all' || filter === 'healthy') && (
             <div className="space-y-3">
               <h3 
                 className="text-sm font-extrabold text-emerald-500 uppercase tracking-wider flex items-center gap-1.5 pl-1 cursor-pointer select-none hover:text-emerald-400 transition-colors"
@@ -434,7 +442,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
               
               {showHealthyImages && (
                 <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-                  {paginatedResults.filter(r => r.status === 'healthy').map((item, idx) => {
+                  {paginatedResults.filter(r => r.status === 'healthy' || r.status === 'pending').map((item, idx) => {
                     const thumbnailSrc = thumbnails[item.fileName];
                     return (
                       <div 
@@ -448,12 +456,18 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
                             <img 
                               src={thumbnailSrc} 
                               alt={item.fileName} 
-                              className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 opacity-0 transition-all duration-700"
+                              className={`absolute inset-0 h-full w-full object-cover group-hover:scale-110 opacity-0 transition-all duration-700 ${item.status === 'pending' ? 'grayscale opacity-50' : ''}`}
                               onLoad={(e) => {
                                 e.currentTarget.previousElementSibling?.classList.add('hidden');
                                 e.currentTarget.classList.remove('opacity-0');
                               }}
                             />
+                            {item.status === 'pending' && (
+                              <div className="absolute inset-0 bg-background/50 flex flex-col items-center justify-center gap-2">
+                                <Clock className="h-6 w-6 text-foreground animate-pulse" />
+                                <span className="text-[10px] font-bold text-foreground bg-background/80 px-2 py-0.5 rounded-full">Analisando</span>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="flex h-full items-center justify-center">
