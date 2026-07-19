@@ -38,6 +38,44 @@ interface HistoryEntry {
   corrupted: number;
 }
 
+function LivePreviewItem({ item }: { item: ImageCheckResult }) {
+  const [src, setSrc] = useState<string>('');
+
+  useEffect(() => {
+    if (item.status === 'healthy') {
+      try {
+        const url = URL.createObjectURL(item.fileRef);
+        setSrc(url);
+        return () => URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('Falha ao criar ObjectURL de LivePreview:', e);
+      }
+    }
+  }, [item]);
+
+  const isHealthy = item.status === 'healthy';
+
+  return (
+    <div 
+      className={`aspect-square rounded-xl border overflow-hidden flex items-center justify-center relative animate-in zoom-in-75 duration-300 transition-all
+        ${isHealthy ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/35 bg-rose-500/10'}
+      `}
+      title={`${item.fileName} (${isHealthy ? 'OK' : item.errorReason})`}
+    >
+      {isHealthy && src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse" />
+      )}
+      
+      <span className={`absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-background
+        ${isHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}
+      `} />
+    </div>
+  );
+}
+
 export function Dashboard() {
   const [results, setResults] = useState<ImageCheckResult[]>([]);
   const [missingSequences, setMissingSequences] = useState<MissingSequenceResult[]>([]);
@@ -469,7 +507,7 @@ export function Dashboard() {
 
             <div className="space-y-2">
               <Progress value={progress} className="h-2.5 rounded-full" />
-              <div className="flex justify-between text-xs text-muted-foreground font-semibold">
+              <div className="flex justify-between text-xs text-muted-foreground font-semibold pb-2">
                 <span className="flex items-center gap-1">
                   <Play className="h-3 w-3" />
                   Progresso: {progress}%
@@ -480,6 +518,20 @@ export function Dashboard() {
                 </span>
               </div>
             </div>
+
+            {/* Rolo de Filme em Tempo Real das imagens analisadas */}
+            {results.length > 0 && (
+              <div className="space-y-2.5 pt-4 border-t border-primary/10 animate-in fade-in-50 duration-300">
+                <p className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider pl-0.5">
+                  Fila de Processamento Visual (Tempo Real)
+                </p>
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                  {results.slice(-8).map((item, idx) => (
+                    <LivePreviewItem key={`${item.fileName}-${idx}`} item={item} />
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
