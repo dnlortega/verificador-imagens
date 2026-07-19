@@ -84,24 +84,6 @@ export function UploadZone({ onFilesSelected, isProcessing }: UploadZoneProps) {
 
   return (
     <div className="w-full relative group perspective-1000">
-      <input
-        id="file-upload"
-        type="file"
-        ref={fileInputRef}
-        className="sr-only absolute pointer-events-none"
-        multiple
-        accept="image/*,video/mp4,video/quicktime,.bmp,.mp4,.mov"
-        onChange={handleFileChange}
-      />
-      <input
-        id="folder-upload"
-        type="file"
-        ref={folderInputRef}
-        className="sr-only absolute pointer-events-none"
-        {...({ webkitdirectory: "true", directory: "true" } as any)}
-        multiple
-        onChange={handleFileChange}
-      />
 
       {/* Orbital Glow Effect */}
       <div className={`absolute -inset-1 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-1000 z-0 bg-gradient-to-r from-emerald-500 via-indigo-500 to-emerald-500 bg-[length:200%_auto] animate-[gradient_4s_linear_infinite] ${isDragActive ? 'opacity-100 scale-105' : ''}`} />
