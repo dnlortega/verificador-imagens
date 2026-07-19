@@ -205,7 +205,12 @@ export async function checkImageLoading(file: File): Promise<{ isValid: boolean;
   }
 }
 
-export async function checkImageFile(file: File): Promise<ImageCheckResult> {
+export async function checkMediaFile(file: File): Promise<ImageCheckResult> {
+  const isVideo = file.type.startsWith('video/') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov');
+  if (isVideo) {
+    return checkVideoFile(file);
+  }
+
   const startTime = performance.now();
   
   const result: ImageCheckResult = {
@@ -255,6 +260,81 @@ export async function checkImageFile(file: File): Promise<ImageCheckResult> {
 
   result.durationMs = parseFloat((performance.now() - startTime).toFixed(1));
   return result;
+}
+
+export async function checkVideoFile(file: File): Promise<ImageCheckResult> {
+  const startTime = performance.now();
+  
+  const result: ImageCheckResult = {
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type || 'video',
+    status: 'healthy',
+    durationMs: 0,
+    fileRef: file,
+  };
+
+  if (file.size < 1024) {
+    result.status = 'corrupted';
+    result.errorReason = 'Arquivo de vídeo minúsculo ou incompleto';
+    result.durationMs = Math.round(performance.now() - startTime);
+    return result;
+  }
+
+  try {
+    const hasMoov = await checkMoovAtom(file);
+    if (!hasMoov) {
+      result.status = 'corrupted';
+      result.errorReason = 'Estrutura do vídeo inválida ou truncada (Átomo "moov" ausente). Gravação interrompida.';
+    }
+  } catch (e: any) {
+    result.status = 'corrupted';
+    result.errorReason = `Erro ao ler a estrutura do vídeo: ${e.message}`;
+  }
+
+  result.durationMs = Math.round(performance.now() - startTime);
+  return result;
+}
+
+async function checkMoovAtom(file: File): Promise<boolean> {
+  let offset = 0;
+  const fileSize = file.size;
+
+  while (offset < fileSize && offset < 1024 * 1024 * 1024 * 5) { // Limite de varredura
+    if (offset + 8 > fileSize) break;
+    
+    const buffer = await readBytesSlice(file, offset, offset + 8);
+    const view = new DataView(buffer);
+    
+    let boxSize = view.getUint32(0, false);
+    let boxType = '';
+    for (let i = 4; i < 8; i++) boxType += String.fromCharCode(view.getUint8(i));
+
+    if (boxSize === 1) {
+      if (offset + 16 > fileSize) break;
+      const extendedBuffer = await readBytesSlice(file, offset + 8, offset + 16);
+      const extendedView = new DataView(extendedBuffer);
+      const high = extendedView.getUint32(0, false);
+      const low = extendedView.getUint32(4, false);
+      if (high > 0) boxSize = Number.MAX_SAFE_INTEGER;
+      else boxSize = low;
+      
+      if (boxType === 'moov') return true;
+      offset += boxSize;
+    } else if (boxSize === 0) {
+      if (boxType === 'moov') return true;
+      break;
+    } else {
+      if (boxType === 'moov') return true;
+      offset += boxSize;
+    }
+    
+    if (!/^[a-zA-Z0-9 ]{4}$/.test(boxType)) {
+      return false; // Estrutura malformada (não é MP4/MOV válido)
+    }
+  }
+
+  return false;
 }
 
 export interface MissingSequenceResult {

@@ -322,7 +322,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
       {viewMode === 'gallery' && (
         <div className="space-y-6 animate-in fade-in-50 duration-300">
           {/* Seção 1: Fotos com Erros (Danificadas) - Em Destaque no topo para o usuário ver logo */}
-          {corruptedItems.length > 0 && (filter === 'all' || filter === 'corrupted') && (
+          {paginatedResults.some(r => r.status === 'corrupted') && (filter === 'all' || filter === 'corrupted') && (
             <div className="space-y-3">
               <h3 className="text-sm font-extrabold text-rose-500 uppercase tracking-wider flex items-center gap-1.5 pl-1">
                 <AlertTriangle className="h-4 w-4 animate-bounce" />
@@ -344,7 +344,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
               </div>
               
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {corruptedItems.map((item, idx) => (
+                {paginatedResults.filter(r => r.status === 'corrupted').map((item, idx) => (
                   <Card 
                     key={`failed-${idx}`}
                     className="border border-rose-500/25 bg-rose-500/5 hover:bg-rose-500/10 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 rounded-xl overflow-hidden"
@@ -412,7 +412,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
           )}
 
           {/* Seção 2: Fotos Íntegras (Saudáveis) */}
-          {healthyItems.length > 0 && (filter === 'all' || filter === 'healthy') && (
+          {paginatedResults.some(r => r.status === 'healthy') && (filter === 'all' || filter === 'healthy') && (
             <div className="space-y-3">
               <h3 className="text-sm font-extrabold text-emerald-500 uppercase tracking-wider flex items-center gap-1.5 pl-1">
                 <CheckCircle className="h-4 w-4" />
@@ -420,7 +420,7 @@ export function ImageList({ results, onSelectResult, onExport }: ImageListProps)
               </h3>
               
               <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-                {healthyItems.map((item, idx) => {
+                {paginatedResults.filter(r => r.status === 'healthy').map((item, idx) => {
                   const thumbnailSrc = thumbnails[item.fileName];
                   return (
                     <div 
