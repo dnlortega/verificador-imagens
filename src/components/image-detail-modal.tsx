@@ -233,20 +233,24 @@ export function ImageDetailModal({ result, isOpen, onClose }: ImageDetailModalPr
                   </div>
                   
                   {!isVideo && (
-                    <Button
-                      onClick={handleRepair}
-                      disabled={isRepairing}
-                      className="w-full h-14 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold tracking-wide shadow-[0_8px_30px_rgba(245,158,11,0.25)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(245,158,11,0.4)] border-0 flex items-center justify-center gap-2 group relative overflow-hidden"
-                    >
-                      {/* Efeito de brilho passando pelo botão */}
-                      <div className="absolute inset-0 w-1/4 bg-white/20 -translate-x-[150%] skew-x-12 group-hover:translate-x-[500%] transition-transform duration-1000 ease-in-out" />
-                      
-                      {isRepairing ? (
-                        <><Loader2 className="h-5 w-5 animate-spin" /> Restaurando Pixels...</>
-                      ) : (
-                        <><Wrench className="h-5 w-5" /> Iniciar Modo de Recuperação</>
-                      )}
-                    </Button>
+                    <div className="flex justify-center">
+                      <Button
+                        onClick={handleRepair}
+                        disabled={isRepairing}
+                        size="icon"
+                        className="h-14 w-14 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white shadow-[0_8px_30px_rgba(245,158,11,0.25)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(245,158,11,0.4)] border-0 flex items-center justify-center group relative overflow-hidden"
+                        title="Iniciar Modo de Recuperação"
+                      >
+                        {/* Efeito de brilho passando pelo botão */}
+                        <div className="absolute inset-0 w-1/4 bg-white/20 -translate-x-[250%] skew-x-12 group-hover:translate-x-[500%] transition-transform duration-1000 ease-in-out" />
+                        
+                        {isRepairing ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                          <Wrench className="h-6 w-6" />
+                        )}
+                      </Button>
+                    </div>
                   )}
                   {isVideo && (
                     <div className="text-xs text-center text-muted-foreground/70 font-medium px-4">
