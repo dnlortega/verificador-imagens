@@ -109,6 +109,55 @@ async function checkMagicBytes(file: File): Promise<{ isValid: boolean; detected
   }
 }
 
+function checkCanvasPixelsForTruncation(img: HTMLImageElement): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return false;
+
+    ctx.drawImage(img, 0, 0);
+
+    // Amostra 1: Linha de pixels horizontal a 95% da altura
+    const sampleHeight1 = Math.floor(img.naturalHeight * 0.95);
+    // Amostra 2: Linha de pixels final (altura - 1)
+    const sampleHeight2 = img.naturalHeight - 1;
+
+    const checkLineUniform = (y: number): boolean => {
+      if (y <= 0 || y >= img.naturalHeight) return false;
+      const imageData = ctx.getImageData(0, y, img.naturalWidth, 1);
+      const data = imageData.data;
+
+      const firstR = data[0];
+      const firstG = data[1];
+      const firstB = data[2];
+      const firstA = data[3];
+
+      // Se toda a linha horizontal for 100% idêntica
+      for (let i = 4; i < data.length; i += 4) {
+        if (data[i] !== firstR || data[i+1] !== firstG || data[i+2] !== firstB || data[i+3] !== firstA) {
+          return false;
+        }
+      }
+
+      // Se a linha for uniforme, verifica se é o cinza de falha do navegador (#808080), preto ou transparente
+      const isGray = (firstR >= 120 && firstR <= 136) && (firstG >= 120 && firstG <= 136) && (firstB >= 120 && firstB <= 136);
+      const isBlack = firstR === 0 && firstG === 0 && firstB === 0;
+      const isTransparent = firstA === 0;
+
+      return isGray || isBlack || isTransparent;
+    };
+
+    if (checkLineUniform(sampleHeight1) || checkLineUniform(sampleHeight2)) {
+      return true;
+    }
+  } catch (e) {
+    console.error('Falha na análise de pixels para truncamento:', e);
+  }
+  return false;
+}
+
 // Otimização ágil com decodificação de imagem assíncrona nativa
 export function checkImageLoading(file: File): Promise<{ isValid: boolean; errorReason?: string; dimensions?: { width: number; height: number } }> {
   return new Promise((resolve) => {
@@ -123,14 +172,23 @@ export function checkImageLoading(file: File): Promise<{ isValid: boolean; error
       }
 
       // img.decode() faz a decodificação da imagem nativamente em segundo plano sem usar canvas físico!
-      // É muito mais rápido, economiza RAM e aproveita aceleração de hardware.
       img.decode()
         .then(() => {
+          // Validação avançada de pixels na parte inferior para pegar imagens cortadas
+          const isTruncated = checkCanvasPixelsForTruncation(img);
           URL.revokeObjectURL(objectUrl);
-          resolve({ 
-            isValid: true, 
-            dimensions: { width: img.naturalWidth, height: img.naturalHeight } 
-          });
+          
+          if (isTruncated) {
+            resolve({
+              isValid: false,
+              errorReason: 'Imagem incompleta/truncada: detectado preenchimento cinza sólido ou pixels inválidos na metade inferior'
+            });
+          } else {
+            resolve({ 
+              isValid: true, 
+              dimensions: { width: img.naturalWidth, height: img.naturalHeight } 
+            });
+          }
         })
         .catch((err) => {
           URL.revokeObjectURL(objectUrl);
