@@ -124,33 +124,55 @@ function checkCanvasPixelsForTruncation(img: HTMLImageElement): boolean {
     // Amostra 2: Linha de pixels final (altura - 1)
     const sampleHeight2 = img.naturalHeight - 1;
 
-    const checkLineUniform = (y: number): boolean => {
-      if (y <= 0 || y >= img.naturalHeight) return false;
+    const getLineInfo = (y: number): { isUniform: boolean; r: number; g: number; b: number; a: number } => {
+      if (y <= 0 || y >= img.naturalHeight) return { isUniform: false, r: 0, g: 0, b: 0, a: 0 };
       const imageData = ctx.getImageData(0, y, img.naturalWidth, 1);
       const data = imageData.data;
 
-      const firstR = data[0];
-      const firstG = data[1];
-      const firstB = data[2];
-      const firstA = data[3];
+      const r = data[0];
+      const g = data[1];
+      const b = data[2];
+      const a = data[3];
 
-      // Se toda a linha horizontal for 100% idêntica
       for (let i = 4; i < data.length; i += 4) {
-        if (data[i] !== firstR || data[i+1] !== firstG || data[i+2] !== firstB || data[i+3] !== firstA) {
-          return false;
+        if (data[i] !== r || data[i+1] !== g || data[i+2] !== b || data[i+3] !== a) {
+          return { isUniform: false, r, g, b, a };
         }
       }
+      return { isUniform: true, r, g, b, a };
+    };
 
-      // Se a linha for uniforme, verifica se é o cinza de falha do navegador (#808080), preto ou transparente
-      const isGray = (firstR >= 120 && firstR <= 136) && (firstG >= 120 && firstG <= 136) && (firstB >= 120 && firstB <= 136);
-      const isBlack = firstR === 0 && firstG === 0 && firstB === 0;
-      const isTransparent = firstA === 0;
-
+    const isFailureColor = (r: number, g: number, b: number, a: number): boolean => {
+      const isGray = (r >= 120 && r <= 136) && (g >= 120 && g <= 136) && (b >= 120 && b <= 136);
+      const isBlack = r === 0 && g === 0 && b === 0;
+      const isTransparent = a === 0;
       return isGray || isBlack || isTransparent;
     };
 
-    if (checkLineUniform(sampleHeight1) || checkLineUniform(sampleHeight2)) {
-      return true;
+    const line1 = getLineInfo(sampleHeight1);
+    const line2 = getLineInfo(sampleHeight2);
+
+    // Se uma das linhas de baixo for uniforme com a cor de falha
+    if ((line1.isUniform && isFailureColor(line1.r, line1.g, line1.b, line1.a)) || 
+        (line2.isUniform && isFailureColor(line2.r, line2.g, line2.b, line2.a))) {
+      
+      // Checamos a linha de cima (ex: a 10% da altura)
+      const sampleTop = Math.floor(img.naturalHeight * 0.1);
+      const topInfo = getLineInfo(sampleTop);
+      
+      // Se a linha de cima também for uniforme e tiver EXATAMENTE a mesma cor de falha da linha de baixo,
+      // assumimos que é uma imagem sólida saudável de uma cor só (legítima).
+      // Caso contrário, é um truncamento/corrupção!
+      const targetColor = line2.isUniform ? line2 : line1;
+      if (topInfo.isUniform && 
+          topInfo.r === targetColor.r && 
+          topInfo.g === targetColor.g && 
+          topInfo.b === targetColor.b && 
+          topInfo.a === targetColor.a) {
+        return false; // Saudável
+      }
+
+      return true; // Corrompido
     }
   } catch (e) {
     console.error('Falha na análise de pixels para truncamento:', e);
