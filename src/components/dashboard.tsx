@@ -86,6 +86,7 @@ export function Dashboard() {
   
   // Configurações
   const [concurrency, setConcurrency] = useState<number>(12); // Padrão agora é 12 para agilizar
+  const [enableSequenceDetection, setEnableSequenceDetection] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMissing, setShowMissing] = useState(true);
@@ -256,9 +257,13 @@ export function Dashboard() {
     setCurrentFileChecking('');
 
     // Detectar imagens ausentes na ordem numérica dos arquivos
-    const fileNames = files.map(f => f.name);
-    const missing = detectMissingSequences(fileNames);
-    setMissingSequences(missing);
+    if (enableSequenceDetection) {
+      const fileNames = files.map(f => f.name);
+      const missing = detectMissingSequences(fileNames);
+      setMissingSequences(missing);
+    } else {
+      setMissingSequences([]);
+    }
 
     if (cancelRef.current) {
       toast.warning('A análise foi cancelada pelo usuário.');
@@ -488,6 +493,21 @@ export function Dashboard() {
                 step={1}
                 className="py-2"
               />
+              
+              <div className="pt-4 mt-2 border-t border-primary/10 flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold">Análise de Sequência Numérica</p>
+                  <p className="text-[10px] text-muted-foreground max-w-[200px]">Avisa se houver fotos faltando na numeração da pasta.</p>
+                </div>
+                <Button 
+                  variant={enableSequenceDetection ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setEnableSequenceDetection(!enableSequenceDetection)}
+                  className={`h-7 text-xs rounded-lg ${enableSequenceDetection ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : ''}`}
+                >
+                  {enableSequenceDetection ? 'Ativado' : 'Desativado'}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
